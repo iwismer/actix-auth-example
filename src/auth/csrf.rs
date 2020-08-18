@@ -1,0 +1,53 @@
+/// Module that contains all the functions related to CSRF.
+use crate::config;
+use crate::models::ServiceError;
+use actix_http::cookie::{Cookie, SameSite};
+use actix_web::{HttpMessage, HttpRequest};
+use chrono::Duration;
+
+/// Generate a new random csrf token
+pub fn generate_csrf_token() -> Result<String, String> {
+    let mut csrf_token = [0u8; 64];
+    getrandom::getrandom(&mut csrf_token)
+        .map_err(|e| format!("Error generating csrf token: {}", e))?;
+    Ok(hex::encode(csrf_token.to_vec()))
+}
+
+/// Checks that the CSRF token contained in the submitted form and the CSRF token in the request cookie match.
+pub async fn check_csrf<T: Into<String>>(
+    form_csrf: Option<T>,
+    req: &HttpRequest,
+) -> Result<(), ServiceError> {
+    // Get the csrf token from the form
+    let form_csrf_unwrapped = form_csrf
+        .ok_or(ServiceError::bad_request(&req, "No CSRF token found in form."))?
+        .into();
+    // Get the CSRF cookie from the request
+    match req
+        .cookies()
+        .map_err(|e| {
+            ServiceError::general(&req, &format!("Error getting cookies from request: {}", e))
+        })?
+        .iter()
+        .find(|c| c.name() == "csrf")
+        .map(|c| c.value().to_string())
+    {
+        Some(cookie) => match cookie == form_csrf_unwrapped {
+            true => Ok(()),
+            false => Err(ServiceError::unauthorized(&req, "CSRF tokens don't match.")),
+        },
+        None => Err(ServiceError::unauthorized(&req, "No CSRF cookies found.")),
+    }
+}
+
+/// Generate a csrf cookie from the supplied token
+pub fn csrf_cookie(csrf_token: &str) -> Cookie {
+    Cookie::build("csrf", csrf_token.to_string())
+        .domain(config::COOKIE_DOMAIN.as_str())
+        .path("/")
+        .secure(*config::PRODUCTION)
+        .max_age(Duration::days(1).num_seconds())
+        .http_only(true)
+        .same_site(SameSite::Strict)
+        .finish()
+}

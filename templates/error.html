@@ -1,0 +1,19 @@
+{% extends "base.html" %} {% block title %}Error - {{code}}{% endblock %} {% block head %} {% endblock %}
+{% block content %}
+<div class="title text-center">
+  <h1>Error - {{code}}</h1>
+  <div>
+    There was an error while serving the page you were looking for: {{page}}
+  </div>
+  {% if message is defined %}
+  <br>
+  <div>
+    {{message}}
+  </div>
+  {% endif %}
+  <br>
+  <div>
+    <a href="/">Click here to go home.</a>
+  </div>
+</div>
+{% endblock %}

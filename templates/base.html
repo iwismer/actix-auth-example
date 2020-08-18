@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Rust/Actix Auth Example">
+  <meta name="author" content="Isaac Wismer">
+  <meta name="keywords" content="actix,rust,example,authentication">
+
+  <title>{% block title %}{{ title }} - Auth Example{% endblock %}</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css"
+    integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/grids-responsive-min.css"
+      integrity="sha384-+lKLtMyKzY/ZdqRXlhw2whazop7duDxgP+oWPB+EGry5wK+vJnZwSsgMnAmDS/39" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css"
+    integrity="sha384-HzLeBuhoNPvSl5KYnjx0BT+WB0QEEqLprO+NBkkk5gbc67FTaL7XIGa2w1L0Xbgc" crossorigin="anonymous">
+
+  <link rel="stylesheet" type="text/css" href="/static/style.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/menu.min.css">
+
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <nav>
+    <div id="menuToggle">
+      <input type="checkbox">
+      <span></span>
+      <span></span>
+      <span></span>
+      <ul id="menu">
+        <a href="/">
+          <li><i class="fas fa-home fa-lg fa-fw"></i> Home</li>
+        </a>
+        <a href="/about">
+          <li><i class="fas fa-question fa-lg fa-fw"></i> About Us</li>
+        </a>
+      </ul>
+    </div>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+
+</html>

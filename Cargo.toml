@@ -1,0 +1,30 @@
+[package]
+name = "auth-example"
+version = "0.5.0"
+authors = ["Isaac Wismer <isaac@iwismer.ca>"]
+edition = "2018"
+
+[dependencies]
+actix-files = "^0.2"
+actix-http = "1"
+actix-rt = "^1.1"
+actix-service = "1.0.6"
+actix-web = "2.0.0"
+bson = "1.0.0"
+chrono = "0.4.15"
+env_logger = "0.7.1"
+futures = "^0.3"
+getrandom = "0.1.14"
+hex = "0.4.2"
+lazy_static = "1.4.0"
+log = { version = "0.4", features = ["max_level_debug", "release_max_level_info"] }
+mongodb = "1.0.0"
+regex = "1"
+rust-argon2 = "0.8"
+serde = "^1.0.106"
+tera = "1.5.0"
+url = "2.1.1"
+
+[profile.release]
+lto = true
+codegen-units = 1

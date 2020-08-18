@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  mongo:
+    image: 'mongo:latest'
+    container_name: 'mongodb'
+    restart: always
+    ports:
+      - '27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=example
+      - MONGO_INITDB_ROOT_PASSWORD=hunter2
+    volumes:
+      - "dbdata:/data/db"
+    networks:
+      - mongo_network
+
+
+  auth-example:
+    image: iwismer/auth-example
+    container_name: 'auth-example'
+    restart: always
+    environment:
+      - DB_USER=example
+      - DB_PASS=hunter2
+      - DB_ADDR=localhost
+      - DB_PORT=27017
+      - DOMAIN='https://example.com/'
+      - PRODUCTION=true
+    networks:
+      - mongo_network
+    depends_on:
+      - mongo
+    ports:
+      - '8080'
+
+volumes:
+  dbdata:
+
+networks:
+  mongo_network:

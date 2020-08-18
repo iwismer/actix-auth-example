@@ -1,0 +1,3 @@
+Contact: mailto:isaac@iwismer.ca
+Preferred-Languages: en
+Canonical: https://www.iwismer.ca/.well-known/security.txt
