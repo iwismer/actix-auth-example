@@ -1,5 +1,5 @@
 /// Module for endpoints related to deleting users
-use crate::auth::{credentials::credential_validator, csrf::check_csrf, session::get_req_user};
+use crate::auth::{credentials::credential_validator, csrf::check_csrf};
 use crate::db::auth::{delete_user, get_user_by_userid};
 use crate::models::ServiceError;
 use actix_web::{http::header, web::Form, HttpRequest, HttpResponse, Result};
