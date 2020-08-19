@@ -61,17 +61,25 @@ async fn main() -> std::io::Result<()> {
             // TODO CORS?
             // Home page
             // Requires a trailing slash due to URL params?
-            .service(web::resource("").route(web::get().to(handlers::home)))
-            .service(web::resource("/").route(web::get().to(handlers::home)))
+            .service(
+                web::resource("")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
+                    .route(web::get().to(handlers::home)),
+            )
+            .service(
+                web::resource("/")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
+                    .route(web::get().to(handlers::home)),
+            )
             .service(
                 web::scope("/zone")
-                    .wrap(auth::session::AuthService)
+                    .wrap(auth::middleware::AuthCheckService::require_auth())
                     .service(web::resource("").route(web::get().to(handlers::zone))),
                 // TODO have some other various pages here
             )
             .service(
                 web::scope("/user")
-                    .wrap(auth::session::AuthService)
+                    .wrap(auth::middleware::AuthCheckService::require_auth())
                     .service(web::resource("").route(web::get().to(handlers::user::view_user)))
                     .service(
                         web::resource("/{page}")
@@ -99,11 +107,13 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::resource("/login")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::auth::login))
                     .route(web::post().to(handlers::auth::login_post)),
             )
             .service(
                 web::resource("/register")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::user::register::register_get))
                     .route(web::post().to(handlers::user::register::register_post)),
             )
