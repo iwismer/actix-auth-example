@@ -1,11 +1,11 @@
 use crate::auth::session::get_req_user;
 /// Module that handles all the authentication related enpoints in the website
 use crate::auth::{
-    credentials::credential_validator, session::generate_session_token, session::get_session_token,
+    credentials::credential_validator_username, session::generate_session_token,
+    session::get_session_token,
 };
 use crate::config;
 use crate::db::auth::delete_session;
-use crate::db::auth::get_user_username;
 use crate::models::ServiceError;
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
@@ -44,40 +44,35 @@ pub async fn login_post(
             "Username/Password too long (> 8192 bytes)",
         ));
     }
-    if credential_validator(&params.username, &params.password)
+    match credential_validator_username(&params.username, &params.password)
         .await
         .map_err(|s| ServiceError::general(&req, s))?
     {
-        let user = get_user_username(&params.username)
-            .await
-            .map_err(|s| ServiceError::general(&req, s))?
-            .ok_or(ServiceError::unauthorized(
-                &req,
-                "Invalid username/password.",
-            ))?;
-        let session_token = generate_session_token(&user.user_id)
-            .await
-            .map_err(|s| ServiceError::general(&req, s))?;
-        info!("Successfully logged in user: {}", params.username);
-        Ok(HttpResponse::SeeOther()
-            .header(header::LOCATION, "/")
-            .cookie(
-                Cookie::build("session", session_token)
-                    .domain(config::COOKIE_DOMAIN.as_str())
-                    .path("/")
-                    .secure(*config::PRODUCTION)
-                    .max_age(Duration::days(1).num_seconds())
-                    .http_only(true)
-                    .same_site(SameSite::Strict)
-                    .finish(),
-            )
-            .finish())
-    } else {
-        info!("Invalid password for user: {}", &params.username);
-        Err(ServiceError::unauthorized(
-            &req,
-            "Invalid username/password.",
-        ))
+        Some(user) => {
+            let session_token = generate_session_token(&user.user_id)
+                .await
+                .map_err(|s| ServiceError::general(&req, s))?;
+
+            info!("Successfully logged in user: {}", params.username);
+
+            Ok(HttpResponse::SeeOther()
+                .header(header::LOCATION, "/zone")
+                .cookie(
+                    Cookie::build("session", session_token)
+                        .domain(config::COOKIE_DOMAIN.as_str())
+                        .path("/")
+                        .secure(*config::PRODUCTION)
+                        .max_age(Duration::days(1).num_seconds())
+                        .http_only(true)
+                        .same_site(SameSite::Strict)
+                        .finish(),
+                )
+                .finish())
+        }
+        None => {
+            info!("Invalid user: {}", &params.username);
+            Err(ServiceError::unauthorized(&req, "Invalid credentials."))
+        }
     }
 }
 
@@ -89,12 +84,12 @@ pub async fn logout(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
             delete_session(&t)
                 .await
                 .map_err(|s| ServiceError::general(&req, s))?;
+            info!("Successfully logged out user");
         }
         None => {
             warn!("Token not found in request to log out");
         }
     }
-    info!("Successfully logged out user");
     Ok(HttpResponse::SeeOther()
         .header(header::LOCATION, "/")
         .del_cookie(&Cookie::named("session"))

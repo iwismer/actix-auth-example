@@ -1,5 +1,5 @@
 /// Module that contains all the functions related to sessions.
-use crate::db::auth::{add_session, get_session_user_id, get_user_userid, validate_session};
+use crate::db::auth::{add_session, get_session_user_id, get_user_by_userid, validate_session};
 use crate::models::User;
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
@@ -128,5 +128,5 @@ pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, Strin
         None => return Ok(None),
     };
     log::debug!("userid: {}", user_id);
-    get_user_userid(&user_id).await
+    get_user_by_userid(&user_id).await
 }

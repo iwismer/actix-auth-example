@@ -66,7 +66,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/zone")
                     .wrap(auth::session::AuthService)
-                    .service(web::resource("").route(web::get().to(handlers::home))),
+                    .service(web::resource("").route(web::get().to(handlers::zone))),
                 // TODO have some other various pages here
             )
             .service(
@@ -82,6 +82,11 @@ async fn main() -> std::io::Result<()> {
                         web::resource("/delete")
                             // TODO
                             .route(web::delete().to(handlers::user::delete::delete_user_post)),
+                    )
+                    .service(
+                        web::resource("/password")
+                            .route(web::get().to(handlers::user::modify::change_password_get))
+                            .route(web::post().to(handlers::user::modify::change_password_post)),
                     ),
                 // TODO have some other various pages here
                 // Like user modification

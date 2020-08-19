@@ -4,10 +4,11 @@ use super::{session_collection, users_collection};
 use crate::models::User;
 use bson::doc;
 use chrono::{DateTime, Utc};
+use mongodb::options::UpdateModifications;
 use std::convert::TryFrom;
 
 /// Get a single user from the DB
-pub async fn get_user_username(username: &str) -> Result<Option<User>, String> {
+pub async fn get_user_by_username(username: &str) -> Result<Option<User>, String> {
     Ok(
         match users_collection()?
             .find_one(Some(doc! {"username": username}), None)
@@ -24,7 +25,7 @@ pub async fn get_user_username(username: &str) -> Result<Option<User>, String> {
 }
 
 /// Get user_id from session token
-pub async fn get_user_userid(user_id: &str) -> Result<Option<User>, String> {
+pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, String> {
     Ok(
         match users_collection()?
             .find_one(Some(doc! {"user_id": user_id}), None)
@@ -41,9 +42,9 @@ pub async fn get_user_userid(user_id: &str) -> Result<Option<User>, String> {
 }
 
 /// Get a user's has from the database
-pub async fn get_user_hash(user: &str) -> Result<Option<String>, String> {
-    Ok(get_user_username(user).await?.map(|u| u.pass_hash))
-}
+// pub async fn get_user_hash(user: &str) -> Result<Option<String>, String> {
+//     Ok(get_user_username(user).await?.map(|u| u.pass_hash))
+// }
 
 /// Add a user to the DB
 pub async fn add_user(user: User) -> Result<(), String> {
@@ -51,6 +52,19 @@ pub async fn add_user(user: User) -> Result<(), String> {
         .insert_one(user.into(), None)
         .await
         .map_err(|e| format!("Problem adding user:{}", e))?;
+    Ok(())
+}
+
+/// Add a user to the DB
+pub async fn modify_user(user: User) -> Result<(), String> {
+    users_collection()?
+        .update_one(
+            doc! { "user_id": &user.user_id },
+            UpdateModifications::Document(user.into()),
+            None,
+        )
+        .await
+        .map_err(|e| format!("Problem modifying user:{}", e))?;
     Ok(())
 }
 

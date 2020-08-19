@@ -19,6 +19,8 @@ I also hope that other people might find it a useful reference when implementing
 - Logout button in menu if logged in
 - redirect away from login page if logged in
 - Keep me signed in checkbox
+- Use client side redirects
+- Add captcha
 
 `docker run -it --rm --network=host iwismer/auth-example`
 
@@ -29,6 +31,8 @@ db.createCollection("users", {})
 db.createCollection("sessions", {})
 db.sessions.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
 db.sessions.createIndex( { "token": 1 }, { unique: true } )
+db.users.createIndex( { "user_id": 1 }, { unique: true } )
+db.users.createIndex( { "username": 1 }, { unique: true } )
 ```
 
 ## Building

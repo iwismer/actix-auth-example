@@ -1,5 +1,6 @@
 /// Module that contains all the functions related to credentials.
-use crate::db::auth::get_user_hash;
+use crate::db::auth::get_user_by_username;
+use crate::models::User;
 use argon2::{hash_encoded, verify_encoded, Config};
 use hex::encode;
 
@@ -22,10 +23,47 @@ pub fn generate_user_id() -> Result<String, String> {
 
 /// Check if the username + password pair are valid
 /// TODO allow either email or username
-pub async fn credential_validator(username: &str, password: &str) -> Result<bool, String> {
+pub fn credential_validator(user: &User, password: &str) -> Result<bool, String> {
     // TODO return full user
-    let hash = get_user_hash(username)
+    Ok(verify_encoded(&user.pass_hash, password.as_bytes())
+        .map_err(|e| format!("Error verifying hash: {}", e))?)
+}
+
+/// Check if the username + password pair are valid
+/// TODO allow either email or username
+pub async fn credential_validator_username(
+    username: &str,
+    password: &str,
+) -> Result<Option<User>, String> {
+    // TODO return full user
+    let user = get_user_by_username(username)
         .await?
         .ok_or(format!("User doesn't exist: {}", username))?;
-    verify_encoded(&hash, password.as_bytes()).map_err(|e| format!("Error verifying hash: {}", e))
+    match credential_validator(&user, &password)? {
+        true => Ok(Some(user)),
+        false => Ok(None),
+    }
+}
+
+pub fn validate_password_rules(password: &str, password_confirm: &str) -> Result<(), String> {
+    if password.len() < 10 {
+        return Err("Password must be at least 10 characters.".to_string());
+    }
+    if password.bytes().len() > 8192 {
+        return Err("Password too long (> 8192 bytes).".to_string());
+    }
+    if password != password_confirm {
+        return Err("Passwords don't match.".to_string());
+    }
+    Ok(())
+}
+
+pub fn validate_username_rules(username: &str) -> Result<(), String> {
+    if username.len() == 0 {
+        return Err("Username cannot be empty.".to_string());
+    }
+    if username.bytes().len() > 8192 {
+        return Err("Username too long (> 8192 bytes).".to_string());
+    }
+    Ok(())
 }

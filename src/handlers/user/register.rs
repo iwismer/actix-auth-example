@@ -1,10 +1,12 @@
 /// Module for endpoints related to adding new users
 use super::super::CSRFContext;
-use crate::auth::credentials::generate_password_hash;
 use crate::auth::credentials::generate_user_id;
+use crate::auth::credentials::{
+    generate_password_hash, validate_password_rules, validate_username_rules,
+};
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::session::get_req_user;
-use crate::db::auth::{add_user, get_user_username};
+use crate::db::auth::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
 use actix_web::http::header;
@@ -35,7 +37,6 @@ pub struct NewUserParams {
     email: String,
     password: String,
     password_confirm: String,
-    csrf: String,
 }
 
 /// Accepts the post request to create a new user
@@ -43,30 +44,16 @@ pub async fn register_post(
     req: HttpRequest,
     params: Form<NewUserParams>,
 ) -> Result<HttpResponse, ServiceError> {
-    check_csrf(Some(&params.csrf), &req).await?;
-    if params.username.len() == 0 || params.password.len() == 0 {
+    if let Err(e) = validate_password_rules(&params.password, &params.password_confirm) {
         return Err(ServiceError::bad_request(
             &req,
-            "Creating user: Empty username/password.",
+            format!("Error creating user: {}", e),
         ));
     }
-    if params.password.len() < 10 {
+    if let Err(e) = validate_username_rules(&params.username) {
         return Err(ServiceError::bad_request(
             &req,
-            "Password must be at least 10 characters.",
-        ));
-    }
-    if params.username.bytes().len() > 8192 || params.password.bytes().len() > 8192 {
-        return Err(ServiceError::bad_request(
-            &req,
-            "Username/Password too long (> 8192 bytes).",
-        ));
-    }
-    // check passwords match
-    if params.password != params.password_confirm {
-        return Err(ServiceError::bad_request(
-            &req,
-            "Creating user: passwords don't match.",
+            format!("Error creating user: {}", e),
         ));
     }
     // TODO check for a better regex
@@ -81,7 +68,7 @@ pub async fn register_post(
         ));
     }
     // check user doesn't already exist
-    if get_user_username(&params.username)
+    if get_user_by_username(&params.username)
         .await
         .map_err(|s| ServiceError::general(&req, s))?
         .is_some()

@@ -4,5 +4,22 @@
 </div>
 <div class="content">
   One day this will show you your user details.
+  <table>
+    <tr>
+      <td>Username</td>
+      <td>{{user.username}}</td>
+    </tr>
+    <tr>
+      <td>Email</td>
+      <td>{{user.email}}</td>
+    </tr>
+    <tr>
+      <td>Email validated</td>
+      <td>{{user.email_validated}}</td>
+    </tr>
+  </table>
+  <a class="pure-button pure-button-primary" href="/user/password">Change password</a>
+  <a class="pure-button pure-button-primary" href="/user/username">Change username</a>
+  <a class="pure-button pure-button-primary" href="/user/email">Change email</a>
 </div>
 {% endblock %}
