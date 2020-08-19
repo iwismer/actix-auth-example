@@ -8,19 +8,22 @@ I also hope that other people might find it a useful reference when implementing
 ## Todo
 
 - [x] Add a user ID to the user DB
-- [ ] Add OTP (https://github.com/constantoine/totp-rs)
+- [ ] Add OTP and backup codes (https://github.com/constantoine/totp-rs)
 - [x] password unicode normalization
 - [x] Allow changing passowrd, username, email
-- [ ] Validate email
+- [ ] Validate email (https://lib.rs/crates/lettre)
 - [ ] User privileges?
 - [ ] OAuth
 - [ ] Add script to automatically setup up mongo
 - [ ] User profile picture
+  - Resize on upload
+  - Put them in the DB
+  - display on the profile page
 - [x] Logout button in menu if logged in
 - [x] redirect away from login page if logged in
 - [ ] Keep me signed in checkbox (also set session key on each request)
 - [ ] Use client side redirects
-- [ ] Add captcha
+- [ ] Add captcha on registration
 
 `docker run -it --rm --network=host iwismer/auth-example`
 
