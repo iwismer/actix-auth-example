@@ -366,6 +366,7 @@ dependencies = [
  "rust-argon2",
  "serde",
  "tera",
+ "unicode-normalization",
  "url",
 ]
 

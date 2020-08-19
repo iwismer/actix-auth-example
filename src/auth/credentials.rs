@@ -4,14 +4,19 @@ use crate::models::User;
 use argon2::{hash_encoded, verify_encoded, Config};
 use hex::encode;
 use regex::Regex;
+use unicode_normalization::UnicodeNormalization;
 
 /// Generate a password hash from the supplied password, using a random salt
 pub fn generate_password_hash(password: &str) -> Result<String, String> {
     let config = Config::default();
     let mut salt = [0u8; 32];
     getrandom::getrandom(&mut salt).map_err(|e| format!("Error generating salt: {}", e))?;
-    hash_encoded(password.as_bytes(), &salt, &config)
-        .map_err(|e| format!("Error generating hash: {}", e))
+    hash_encoded(
+        password.nfkc().collect::<String>().as_bytes(),
+        &salt,
+        &config,
+    )
+    .map_err(|e| format!("Error generating hash: {}", e))
 }
 
 /// Generate a random user ID
@@ -26,8 +31,11 @@ pub fn generate_user_id() -> Result<String, String> {
 /// TODO allow either email or username
 pub fn credential_validator(user: &User, password: &str) -> Result<bool, String> {
     // TODO return full user
-    Ok(verify_encoded(&user.pass_hash, password.as_bytes())
-        .map_err(|e| format!("Error verifying hash: {}", e))?)
+    Ok(verify_encoded(
+        &user.pass_hash,
+        password.nfkc().collect::<String>().as_bytes(),
+    )
+    .map_err(|e| format!("Error verifying hash: {}", e))?)
 }
 
 /// Check if the username + password pair are valid

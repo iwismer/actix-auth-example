@@ -7,20 +7,20 @@ I also hope that other people might find it a useful reference when implementing
 
 ## Todo
 
-- Add a user ID to the user DB
-- Add OTP (https://github.com/constantoine/totp-rs)
-- password unicode normalization (https://lib.rs/crates/unicode-normalization)
-- Allow changing passowrd, username, email
-- Validate email
-- User privileges?
-- OAuth
-- Add script to automatically setup up mongo
-- User profile picture
-- Logout button in menu if logged in
-- redirect away from login page if logged in
-- Keep me signed in checkbox
-- Use client side redirects
-- Add captcha
+- [x] Add a user ID to the user DB
+- [ ] Add OTP (https://github.com/constantoine/totp-rs)
+- [x] password unicode normalization
+- [x] Allow changing passowrd, username, email
+- [ ] Validate email
+- [ ] User privileges?
+- [ ] OAuth
+- [ ] Add script to automatically setup up mongo
+- [ ] User profile picture
+- [x] Logout button in menu if logged in
+- [x] redirect away from login page if logged in
+- [ ] Keep me signed in checkbox (also set session key on each request)
+- [ ] Use client side redirects
+- [ ] Add captcha
 
 `docker run -it --rm --network=host iwismer/auth-example`
 
