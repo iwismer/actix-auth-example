@@ -1,10 +1,8 @@
 /// Module for endpoints related to adding new users
-use super::super::CSRFContext;
 use crate::auth::credentials::generate_user_id;
 use crate::auth::credentials::{
     generate_password_hash, validate_password_rules, validate_username_rules,
 };
-use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::session::get_req_user;
 use crate::db::auth::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
@@ -16,18 +14,14 @@ use serde::{Deserialize, Serialize};
 
 /// serves the new user page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
-    let csrf_token = generate_csrf_token().map_err(|s| ServiceError::general(&req, s))?;
-    Ok(HttpResponse::Ok()
-        .cookie(csrf_cookie(&csrf_token))
-        .content_type("text/html")
-        .body(render(
-            "register.html",
-            req.uri().path().to_string(),
-            Some(CSRFContext { csrf: csrf_token }),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting requeset user: {}", e))
-            })?,
-        )?))
+    Ok(HttpResponse::Ok().content_type("text/html").body(render(
+        "register.html",
+        req.uri().path().to_string(),
+        None::<i32>,
+        get_req_user(&req).await.map_err(|e| {
+            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+        })?,
+    )?))
 }
 
 /// Struct for holding the form parameters with the new user form
