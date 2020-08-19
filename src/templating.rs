@@ -1,5 +1,5 @@
 /// Module that contains all the template rendering functions.
-use crate::models::ServiceError;
+use crate::models::{ServiceError, User};
 use actix_web::{http::StatusCode, Result};
 use lazy_static::lazy_static;
 use log::debug;
@@ -16,10 +16,12 @@ pub fn render(
     template: &str,
     path: String,
     context: Option<impl Serialize>,
+    user: Option<User>,
 ) -> Result<String, ServiceError> {
-    let ctx = context.map_or(Context::new(), |c| {
+    let mut ctx = context.map_or(Context::new(), |c| {
         Context::from_serialize(c).unwrap_or(Context::new())
     });
+    ctx.insert("user", &user);
     debug!("Rendering Template: {} {:#?}", template, ctx);
     TERA.render(template, &ctx).map_err(|e| match e.kind {
         tera::ErrorKind::TemplateNotFound(es) => ServiceError {

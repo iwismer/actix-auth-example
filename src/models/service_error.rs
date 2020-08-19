@@ -15,6 +15,7 @@ struct ErrorContext {
 }
 
 /// A generic error for the web server.
+// TODO pass the request to the error? That way we can get the user
 #[derive(Debug)]
 pub struct ServiceError {
     pub code: StatusCode,
@@ -82,6 +83,7 @@ impl ResponseError for ServiceError {
                     false => None,
                 },
             }),
+            None,
         ) {
             Ok(s) => s,
             Err(e) => {

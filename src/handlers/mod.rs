@@ -1,3 +1,4 @@
+use crate::auth::session::get_req_user;
 /// Module that contains all the handler functions for the web endpoints in the website.
 use crate::models::ServiceError;
 use crate::templating::render;
@@ -29,6 +30,9 @@ pub async fn page(req: HttpRequest) -> Result<HttpResponse, Error> {
         ),
         req.uri().path().to_string(),
         None::<i32>,
+        get_req_user(&req).await.map_err(|e| {
+            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+        })?,
     )?))
 }
 
@@ -38,5 +42,8 @@ pub async fn home(req: HttpRequest) -> Result<HttpResponse, Error> {
         "home.html",
         req.uri().path().to_string(),
         None::<i32>,
+        get_req_user(&req).await.map_err(|e| {
+            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+        })?,
     )?))
 }

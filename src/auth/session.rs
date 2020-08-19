@@ -1,5 +1,6 @@
 /// Module that contains all the functions related to sessions.
-use crate::db::auth::{add_session, get_session_user, validate_session};
+use crate::db::auth::{add_session, get_session_user_id, get_user_userid, validate_session};
+use crate::models::User;
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header;
@@ -118,9 +119,14 @@ pub fn get_session_token<T: HttpMessage>(req: &T) -> Option<String> {
 
 // TODO replace with extractor when I figure out how to do async in an extractor
 /// Get the username that sent the request based on the session
-pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<String>, String> {
-    match get_session_token(req) {
-        Some(token) => Ok(get_session_user(&token).await?),
-        None => Ok(None),
-    }
+pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, String> {
+    let user_id = match get_session_token(req) {
+        Some(token) => match get_session_user_id(&token).await? {
+            Some(u) => u,
+            None => return Ok(None),
+        },
+        None => return Ok(None),
+    };
+    log::debug!("userid: {}", user_id);
+    get_user_userid(&user_id).await
 }

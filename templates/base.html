@@ -31,12 +31,18 @@
       <span></span>
       <span></span>
       <ul id="menu">
+        <!-- TODO add username or something -->
         <a href="/">
           <li><i class="fas fa-home fa-lg fa-fw"></i> Home</li>
         </a>
         <a href="/about">
           <li><i class="fas fa-question fa-lg fa-fw"></i> About Us</li>
         </a>
+        {% if user %}
+        <a href="/logout">
+          <li><i class="fas fa-sign-out-alt fa-lg fa-fw"></i> Log Out</li>
+        </a>
+        {% endif %}
       </ul>
     </div>
   </nav>

@@ -62,3 +62,11 @@ pub fn get_bson_string(key: &str, item: &Document) -> Result<String, String> {
         .map_err(|e| format!("Unable to get {} from BSON: {}", key, e))?
         .to_string())
 }
+
+/// Get a bool from a BSON document.
+/// This is a convenience function to reduce code repetition.
+pub fn get_bson_bool(key: &str, item: &Document) -> Result<bool, String> {
+    Ok(item
+        .get_bool(key)
+        .map_err(|e| format!("Unable to get {} from BSON: {}", key, e))?)
+}

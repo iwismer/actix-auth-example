@@ -1,9 +1,11 @@
 /// Module for endpoints related to adding new users
 use super::super::CSRFContext;
 use crate::auth::credentials::generate_password_hash;
+use crate::auth::credentials::generate_user_id;
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
-use crate::db::auth::{add_user, get_user};
-use crate::models::ServiceError;
+use crate::auth::session::get_req_user;
+use crate::db::auth::{add_user, get_user_username};
+use crate::models::{ServiceError, User};
 use crate::templating::render;
 use actix_web::http::header;
 use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
@@ -17,9 +19,12 @@ pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError
         .cookie(csrf_cookie(&csrf_token))
         .content_type("text/html")
         .body(render(
-            "users/new.html",
+            "register.html",
             req.uri().path().to_string(),
             Some(CSRFContext { csrf: csrf_token }),
+            get_req_user(&req).await.map_err(|e| {
+                ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+            })?,
         )?))
 }
 
@@ -76,7 +81,7 @@ pub async fn register_post(
         ));
     }
     // check user doesn't already exist
-    if get_user(&params.username)
+    if get_user_username(&params.username)
         .await
         .map_err(|s| ServiceError::general(&req, s))?
         .is_some()
@@ -90,11 +95,20 @@ pub async fn register_post(
     let hash =
         generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
     // insert user
-    add_user(&params.username, &hash)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s))?;
+    add_user(User {
+        // TODO Maybe just use the monfodb _id??
+        user_id: generate_user_id().map_err(|s| ServiceError::general(&req, s))?,
+        username: params.username.to_string(),
+        email: params.email.to_string(),
+        email_validated: false,
+        pass_hash: hash,
+        otp_token: None,
+        otp_backups: None,
+    })
+    .await
+    .map_err(|s| ServiceError::bad_request(&req, s))?;
     Ok(HttpResponse::SeeOther()
         .content_type("text/html")
-        .header(header::LOCATION, "/edit/users")
+        .header(header::LOCATION, "/")
         .finish())
 }

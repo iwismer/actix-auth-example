@@ -1,9 +1,11 @@
+use crate::auth::session::get_req_user;
 /// Module that handles all the authentication related enpoints in the website
 use crate::auth::{
     credentials::credential_validator, session::generate_session_token, session::get_session_token,
 };
 use crate::config;
 use crate::db::auth::delete_session;
+use crate::db::auth::get_user_username;
 use crate::models::ServiceError;
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
@@ -19,6 +21,9 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
         "login.html",
         req.uri().path().to_string(),
         None::<i32>,
+        get_req_user(&req).await.map_err(|e| {
+            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+        })?,
     )?))
 }
 
@@ -43,12 +48,19 @@ pub async fn login_post(
         .await
         .map_err(|s| ServiceError::general(&req, s))?
     {
-        let session_token = generate_session_token(&params.username)
+        let user = get_user_username(&params.username)
+            .await
+            .map_err(|s| ServiceError::general(&req, s))?
+            .ok_or(ServiceError::unauthorized(
+                &req,
+                "Invalid username/password.",
+            ))?;
+        let session_token = generate_session_token(&user.user_id)
             .await
             .map_err(|s| ServiceError::general(&req, s))?;
         info!("Successfully logged in user: {}", params.username);
         Ok(HttpResponse::SeeOther()
-            .header(header::LOCATION, "/edit")
+            .header(header::LOCATION, "/")
             .cookie(
                 Cookie::build("session", session_token)
                     .domain(config::COOKIE_DOMAIN.as_str())
@@ -62,7 +74,10 @@ pub async fn login_post(
             .finish())
     } else {
         info!("Invalid password for user: {}", &params.username);
-        Err(ServiceError::unauthorized(&req, "Invalid username/password."))
+        Err(ServiceError::unauthorized(
+            &req,
+            "Invalid username/password.",
+        ))
     }
 }
 

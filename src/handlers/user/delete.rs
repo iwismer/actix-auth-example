@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Struct for the delete user form fields
 #[derive(Serialize, Deserialize)]
 pub struct DeleteUserParams {
-    username: String,
+    user_id: String,
     csrf: String,
 }
 
@@ -26,15 +26,16 @@ pub async fn delete_user_post(
             ServiceError::bad_request(&req, format!("Cannot get current user from request: {}", s))
         })?
         .ok_or(ServiceError::unauthorized(&req, "Current user not found."))?
-        == params.username
+        .user_id
+        == params.user_id
     {
         return Err(ServiceError::bad_request(
             &req,
-            format!("Cannot delete your own user: {}", params.username),
+            format!("Cannot delete your own user: {}", params.user_id),
         ));
     }
     // delete user from the DB
-    delete_user(&params.username)
+    delete_user(&params.user_id)
         .await
         .map_err(|e| ServiceError::bad_request(&req, e))?;
     // Redirect back to the users page
