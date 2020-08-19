@@ -1,6 +1,6 @@
 /// Module for endpoints related to deleting users
-use crate::auth::{csrf::check_csrf, session::get_req_user};
-use crate::db::auth::delete_user;
+use crate::auth::{credentials::credential_validator, csrf::check_csrf, session::get_req_user};
+use crate::db::auth::{delete_user, get_user_by_userid};
 use crate::models::ServiceError;
 use actix_web::{http::header, web::Form, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct DeleteUserParams {
     user_id: String,
+    current_password: String,
+    confirm: String,
     csrf: String,
 }
 
@@ -19,19 +21,27 @@ pub async fn delete_user_post(
     params: Form<DeleteUserParams>,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
-    // Check that the user is not trying to delete themselves
-    if get_req_user(&req)
+    if params.confirm != "DELETE ACCOUNT" {
+        return Err(ServiceError::bad_request(&req, "Confirm string incorrect"));
+    }
+    let user = match get_user_by_userid(&params.user_id)
         .await
-        .map_err(|s| {
-            ServiceError::bad_request(&req, format!("Cannot get current user from request: {}", s))
-        })?
-        .ok_or(ServiceError::unauthorized(&req, "Current user not found."))?
-        .user_id
-        == params.user_id
+        .map_err(|s| ServiceError::general(&req, s))?
+    {
+        Some(u) => u,
+        None => {
+            return Err(ServiceError::bad_request(
+                &req,
+                format!("User doesn't exist: {}", params.user_id),
+            ))
+        }
+    };
+    if !credential_validator(&user, &params.current_password)
+        .map_err(|e| ServiceError::general(&req, e))?
     {
         return Err(ServiceError::bad_request(
             &req,
-            format!("Cannot delete your own user: {}", params.user_id),
+            format!("Invalid current password: {}", params.user_id),
         ));
     }
     // delete user from the DB
@@ -41,6 +51,6 @@ pub async fn delete_user_post(
     // Redirect back to the users page
     Ok(HttpResponse::SeeOther()
         .content_type("text/html")
-        .header(header::LOCATION, "/edit/users")
+        .header(header::LOCATION, "/")
         .finish())
 }

@@ -3,6 +3,7 @@ use crate::db::auth::get_user_by_username;
 use crate::models::User;
 use argon2::{hash_encoded, verify_encoded, Config};
 use hex::encode;
+use regex::Regex;
 
 /// Generate a password hash from the supplied password, using a random salt
 pub fn generate_password_hash(password: &str) -> Result<String, String> {
@@ -64,6 +65,18 @@ pub fn validate_username_rules(username: &str) -> Result<(), String> {
     }
     if username.bytes().len() > 8192 {
         return Err("Username too long (> 8192 bytes).".to_string());
+    }
+    Ok(())
+}
+
+pub fn validate_email_rules(email: &str) -> Result<(), String> {
+    // TODO check for a better regex
+    let re = Regex::new(
+        r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+    )
+    .unwrap();
+    if !re.is_match(email) {
+        return Err("Invalid email.".to_string());
     }
     Ok(())
 }

@@ -74,22 +74,28 @@ async fn main() -> std::io::Result<()> {
                     .wrap(auth::session::AuthService)
                     .service(web::resource("").route(web::get().to(handlers::user::view_user)))
                     .service(
-                        web::resource("/modify")
-                            // TODO
-                            .route(web::get().to(handlers::user::register::register_get)),
+                        web::resource("/{page}")
+                            .guard(actix_web::guard::Get())
+                            .route(web::get().to(handlers::user::modify::get_page)),
                     )
                     .service(
                         web::resource("/delete")
-                            // TODO
-                            .route(web::delete().to(handlers::user::delete::delete_user_post)),
+                            // TODO change to delete using client side JS
+                            .route(web::post().to(handlers::user::delete::delete_user_post)),
+                    )
+                    .service(
+                        web::resource("/email")
+                            .route(web::post().to(handlers::user::modify::change_email_post)),
+                    )
+                    .service(
+                        web::resource("/username")
+                            .route(web::post().to(handlers::user::modify::change_username_post)),
                     )
                     .service(
                         web::resource("/password")
-                            .route(web::get().to(handlers::user::modify::change_password_get))
                             .route(web::post().to(handlers::user::modify::change_password_post)),
-                    ),
-                // TODO have some other various pages here
-                // Like user modification
+                    ), // TODO have some other various pages here
+                       // Like user modification
             )
             .service(
                 web::resource("/login")

@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block title %}Change Username{% endblock %} {% block content %}
+<div class="text-center title">
+  <h1>Change username for {{user.username}}</h1>
+</div>
+<div class="content">
+  <form action="/user/username" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
+    <fieldset class="text-center">
+      <input type="hidden" name="csrf" value="{{csrf}}">
+      <input type="hidden" name="user_id" value="{{user.user_id}}">
+      <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
+    </fieldset>
+    <fieldset class="pure-group">
+      <input class="item-center" type="text" name="new_username" id="new_username" placeholder="New Username" required>
+    </fieldset>
+    <fieldset>
+      <input type="submit" value="Change Username" class="pure-button button-dark">
+    </fieldset>
+  </form>
+</div>
+{% endblock %}

@@ -1,17 +1,18 @@
 /// Module for endpoints related to adding new users
 use crate::auth::credentials::generate_user_id;
 use crate::auth::credentials::{
-    generate_password_hash, validate_password_rules, validate_username_rules,
+    generate_password_hash, validate_email_rules, validate_password_rules, validate_username_rules,
 };
-use crate::auth::session::get_req_user;
+use crate::auth::session::{generate_session_token, get_req_user};
+use crate::config;
 use crate::db::auth::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
+use actix_http::cookie::{Cookie, SameSite};
 use actix_web::http::header;
 use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
-use regex::Regex;
+use chrono::Duration;
 use serde::{Deserialize, Serialize};
-
 /// serves the new user page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
@@ -50,15 +51,10 @@ pub async fn register_post(
             format!("Error creating user: {}", e),
         ));
     }
-    // TODO check for a better regex
-    let re = Regex::new(
-        r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
-    )
-    .unwrap();
-    if !re.is_match(&params.email) {
+    if let Err(e) = validate_email_rules(&params.email) {
         return Err(ServiceError::bad_request(
             &req,
-            "Creating user: invalid email.",
+            format!("Error creating user: {}", e),
         ));
     }
     // check user doesn't already exist
@@ -76,20 +72,35 @@ pub async fn register_post(
     let hash =
         generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
     // insert user
-    add_user(User {
+    let user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s))?;
+    let user = User {
         // TODO Maybe just use the monfodb _id??
-        user_id: generate_user_id().map_err(|s| ServiceError::general(&req, s))?,
+        user_id: user_id.to_string(),
         username: params.username.to_string(),
         email: params.email.to_string(),
         email_validated: false,
         pass_hash: hash,
         otp_token: None,
         otp_backups: None,
-    })
-    .await
-    .map_err(|s| ServiceError::bad_request(&req, s))?;
+    };
+    add_user(user)
+        .await
+        .map_err(|s| ServiceError::bad_request(&req, s))?;
+    let session_token = generate_session_token(&user_id)
+        .await
+        .map_err(|s| ServiceError::general(&req, s))?;
     Ok(HttpResponse::SeeOther()
         .content_type("text/html")
-        .header(header::LOCATION, "/")
+        .header(header::LOCATION, "/zone")
+        .cookie(
+            Cookie::build("session", session_token)
+                .domain(config::COOKIE_DOMAIN.as_str())
+                .path("/")
+                .secure(*config::PRODUCTION)
+                .max_age(Duration::days(1).num_seconds())
+                .http_only(true)
+                .same_site(SameSite::Strict)
+                .finish(),
+        )
         .finish())
 }
