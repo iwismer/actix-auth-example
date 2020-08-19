@@ -58,16 +58,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::default())
             // enable logger
             .wrap(middleware::Logger::default())
-            // TODO CORS?
             // Home page
-            // Requires a trailing slash due to URL params?
             .service(
                 web::resource("")
-                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
-                    .route(web::get().to(handlers::home)),
-            )
-            .service(
-                web::resource("/")
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::home)),
             )
@@ -102,8 +95,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::resource("/password")
                             .route(web::post().to(handlers::user::modify::change_password_post)),
-                    ), // TODO have some other various pages here
-                       // Like user modification
+                    ),
             )
             .service(
                 web::resource("/login")
