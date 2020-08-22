@@ -10,7 +10,7 @@ I also hope that other people might find it a useful reference when implementing
 - [x] Add a user ID to the user DB
 - [ ] Add OTP and backup codes (https://github.com/constantoine/totp-rs)
 - [x] password unicode normalization
-- [x] Allow changing passowrd, username, email
+- [x] Allow changing password, username, email
 - [x] Validate email
 - [ ] User privileges?
 - [ ] OAuth
@@ -25,6 +25,7 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Use client side redirects
 - [ ] Add captcha on registration
 - [ ] Forgotten password
+- [ ] Auto retry on insertion of unique fields
 
 `docker run -it --rm --network=host iwismer/auth-example`
 
@@ -35,6 +36,7 @@ db.createCollection("users", {})
 db.createCollection("sessions", {})
 db.sessions.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
 db.sessions.createIndex( { "token": 1 }, { unique: true } )
+db.emails.createIndex( { "token": 1 }, { unique: true } )
 db.users.createIndex( { "user_id": 1 }, { unique: true } )
 db.users.createIndex( { "username": 1 }, { unique: true } )
 ```
