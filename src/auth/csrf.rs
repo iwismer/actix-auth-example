@@ -7,10 +7,7 @@ use chrono::Duration;
 
 /// Generate a new random csrf token
 pub fn generate_csrf_token() -> Result<String, String> {
-    let mut csrf_token = [0u8; 64];
-    getrandom::getrandom(&mut csrf_token)
-        .map_err(|e| format!("Error generating csrf token: {}", e))?;
-    Ok(hex::encode(csrf_token.to_vec()))
+    super::generate_token()
 }
 
 /// Checks that the CSRF token contained in the submitted form and the CSRF token in the request cookie match.
@@ -20,7 +17,10 @@ pub async fn check_csrf<T: Into<String>>(
 ) -> Result<(), ServiceError> {
     // Get the csrf token from the form
     let form_csrf_unwrapped = form_csrf
-        .ok_or(ServiceError::bad_request(&req, "No CSRF token found in form."))?
+        .ok_or(ServiceError::bad_request(
+            &req,
+            "No CSRF token found in form.",
+        ))?
         .into();
     // Get the CSRF cookie from the request
     match req

@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 
 /// Holds a single user's information.
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct User {
     pub user_id: String,
     pub email: String,

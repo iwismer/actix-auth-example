@@ -3,16 +3,17 @@ use crate::auth::credentials::generate_user_id;
 use crate::auth::credentials::{
     generate_password_hash, validate_email_rules, validate_password_rules, validate_username_rules,
 };
+use crate::auth::email::{generate_email_token, send_verification_email};
 use crate::auth::session::{generate_session_token, get_req_user};
 use crate::config;
-use crate::db::auth::{add_user, get_user_by_username};
+use crate::db::auth::{add_email_token, add_user, get_user_by_username, verify_email_token};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
-use actix_web::http::header;
-use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
-use chrono::Duration;
+use actix_web::{web::Form, web::Query, HttpRequest, HttpResponse, Result};
+use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 /// serves the new user page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
@@ -20,7 +21,7 @@ pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError
         req.uri().path().to_string(),
         None::<i32>,
         get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+            ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,
     )?))
 }
@@ -32,6 +33,11 @@ pub struct NewUserParams {
     email: String,
     password: String,
     password_confirm: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct RegSuccessContext {
+    email: String,
 }
 
 /// Accepts the post request to create a new user
@@ -83,15 +89,20 @@ pub async fn register_post(
         otp_token: None,
         otp_backups: None,
     };
-    add_user(user)
+    add_user(user.clone())
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
+    let email_token = generate_email_token().map_err(|s| ServiceError::general(&req, s))?;
+    add_email_token(&user_id, &email_token, Utc::now() + Duration::days(1))
+        .await
+        .map_err(|s| ServiceError::general(&req, s))?;
+    send_verification_email(&params.email, &email_token)
+        .map_err(|s| ServiceError::general(&req, s))?;
     let session_token = generate_session_token(&user_id)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
-    Ok(HttpResponse::SeeOther()
+    Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .header(header::LOCATION, "/zone")
         .cookie(
             Cookie::build("session", session_token)
                 .domain(config::COOKIE_DOMAIN.as_str())
@@ -102,5 +113,33 @@ pub async fn register_post(
                 .same_site(SameSite::Strict)
                 .finish(),
         )
-        .finish())
+        .body(render(
+            "reg_success.html",
+            req.uri().path().to_string(),
+            Some(RegSuccessContext {
+                email: params.email.to_string(),
+            }),
+            Some(user),
+        )?))
+}
+
+/// serves the new user page
+pub async fn verify_email(
+    req: HttpRequest,
+    query: Query<HashMap<String, String>>,
+) -> Result<HttpResponse, ServiceError> {
+    let token = query
+        .get("token")
+        .ok_or(ServiceError::bad_request(&req, "Missing token in request."))?;
+    verify_email_token(&token)
+        .await
+        .map_err(|s| ServiceError::general(&req, s))?;
+    Ok(HttpResponse::Ok().content_type("text/html").body(render(
+        "email_verify_success.html",
+        req.uri().path().to_string(),
+        None::<i32>,
+        get_req_user(&req).await.map_err(|e| {
+            ServiceError::general(&req, format!("Error getting request user: {}", e))
+        })?,
+    )?))
 }

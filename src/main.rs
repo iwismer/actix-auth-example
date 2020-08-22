@@ -110,6 +110,10 @@ async fn main() -> std::io::Result<()> {
                     .route(web::post().to(handlers::user::register::register_post)),
             )
             .service(web::resource("/logout").route(web::get().to(handlers::auth::logout)))
+            .service(
+                web::resource("/email")
+                    .route(web::get().to(handlers::user::register::verify_email)),
+            )
             // Favicon handler so that it doesn't try to render it.
             .service(web::resource("/favicon.ico").to(|| HttpResponse::NotFound()))
             // Any top level pages, the URL matches the template name

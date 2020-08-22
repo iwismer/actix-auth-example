@@ -2,7 +2,6 @@
 use crate::db::auth::get_user_by_username;
 use crate::models::User;
 use argon2::{hash_encoded, verify_encoded, Config};
-use hex::encode;
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;
 
@@ -22,9 +21,7 @@ pub fn generate_password_hash(password: &str) -> Result<String, String> {
 /// Generate a random user ID
 /// TODO make this check for duplicates, and maybe use a better ID generation scheme
 pub fn generate_user_id() -> Result<String, String> {
-    let mut id = [0u8; 64];
-    getrandom::getrandom(&mut id).map_err(|e| format!("Error generating salt: {}", e))?;
-    Ok(encode(id.to_vec()))
+    super::generate_token()
 }
 
 /// Check if the username + password pair are valid

@@ -11,7 +11,7 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Add OTP and backup codes (https://github.com/constantoine/totp-rs)
 - [x] password unicode normalization
 - [x] Allow changing passowrd, username, email
-- [ ] Validate email (https://lib.rs/crates/lettre)
+- [x] Validate email
 - [ ] User privileges?
 - [ ] OAuth
 - [ ] Add script to automatically setup up mongo
@@ -24,6 +24,7 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Keep me signed in checkbox (also set session key on each request)
 - [ ] Use client side redirects
 - [ ] Add captcha on registration
+- [ ] Forgotten password
 
 `docker run -it --rm --network=host iwismer/auth-example`
 

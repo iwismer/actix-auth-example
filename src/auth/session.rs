@@ -11,10 +11,7 @@ pub async fn generate_session_token(user: &str) -> Result<String, String> {
     // Try a few times to create a token, in case of a token that is not unique (Unlikely!)
     // Only repeat 10 times to prevent an infinite loop
     for i in 0..10 {
-        let mut session_token = [0u8; 64];
-        getrandom::getrandom(&mut session_token)
-            .map_err(|e| format!("Error generating session token: {}", e))?;
-        let token = hex::encode(session_token.to_vec());
+        let token = super::generate_token()?;
         match add_session(user, &token, expiry).await {
             Ok(_) => return Ok(token),
             Err(e) => warn!(

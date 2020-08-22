@@ -1,6 +1,7 @@
 /// Module that contains all the DB functions.
 use crate::config::{
-    AUTH_COLLECTION, DB_ADDR, DB_NAME, DB_PASS, DB_POOL_SIZE, DB_PORT, DB_USER, SESSION_COLLECTION,
+    AUTH_COLLECTION, DB_ADDR, DB_NAME, DB_PASS, DB_POOL_SIZE, DB_PORT, DB_USER,
+    EMAIL_TOKEN_COLLECTION, SESSION_COLLECTION,
 };
 use bson::doc;
 use bson::document::Document;
@@ -22,6 +23,11 @@ fn users_collection() -> Result<Collection, String> {
 /// Get the collection containing all the session tokens.
 fn session_collection() -> Result<Collection, String> {
     Ok((*DB_CONN).as_ref()?.collection(&SESSION_COLLECTION))
+}
+
+/// Get the collection containing all the session tokens.
+fn email_token_collection() -> Result<Collection, String> {
+    Ok((*DB_CONN).as_ref()?.collection(&EMAIL_TOKEN_COLLECTION))
 }
 
 /// Connect to the DB and return the connection struct.

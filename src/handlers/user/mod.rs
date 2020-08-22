@@ -16,7 +16,7 @@ pub async fn view_user(req: HttpRequest) -> Result<HttpResponse, Error> {
         req.uri().path().to_string(),
         None::<i32>,
         get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting requeset user: {}", e))
+            ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,
     )?))
 }

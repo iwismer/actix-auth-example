@@ -34,4 +34,17 @@ lazy_static! {
     pub static ref AUTH_COLLECTION: String = env::var("AUTH_COLLECTION").unwrap_or("users".to_string());
     /// The name of the session collection in the DB
     pub static ref SESSION_COLLECTION: String = env::var("SESSION_COLLECTION").unwrap_or("sessions".to_string());
+    /// The name of the email token collection in the DB
+    pub static ref EMAIL_TOKEN_COLLECTION: String = env::var("EMAIL_TOKEN_COLLECTION").unwrap_or("emails".to_string());
+
+    // Email Options
+    /// The from email to use when sending emails
+    pub static ref EMAIL_FROM: String = env::var("EMAIL_FROM").unwrap();
+    /// The server to connect to for STMP
+    pub static ref EMAIL_SERVER: String = env::var("EMAIL_SERVER").unwrap_or("".to_string());
+    /// The username to use when authentication with the email server
+    pub static ref EMAIL_USER: String = env::var("EMAIL_USER").unwrap_or("".to_string());
+    /// The password to use for authentication with the email server
+    pub static ref EMAIL_PASS: String = env::var("EMAIL_PASS").unwrap_or("".to_string());
+
 }
