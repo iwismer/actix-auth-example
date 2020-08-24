@@ -9,7 +9,9 @@ use lazy_static::lazy_static;
 use mongodb::options::ClientOptions;
 use mongodb::{options::StreamAddress, Client, Collection, Database};
 
-pub mod auth;
+pub mod email;
+pub mod session;
+pub mod user;
 
 lazy_static! {
     static ref DB_CONN: Result<Database, String> = connect_to_db();

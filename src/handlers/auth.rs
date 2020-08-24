@@ -5,7 +5,7 @@ use crate::auth::{
     session::get_session_token,
 };
 use crate::config;
-use crate::db::auth::delete_session;
+use crate::db::session::delete_session;
 use crate::models::ServiceError;
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};

@@ -6,7 +6,8 @@ use crate::auth::credentials::{
 use crate::auth::email::{generate_email_token, send_verification_email};
 use crate::auth::session::{generate_session_token, get_req_user};
 use crate::config;
-use crate::db::auth::{add_email_token, add_user, get_user_by_username, verify_email_token};
+use crate::db::email::{add_email_token, verify_email_token};
+use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
