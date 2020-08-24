@@ -96,13 +96,19 @@ where
             };
             match strategy {
                 AuthRedirectStrategy::RequireAuth => match is_logged_in {
-                    true => srv.call(req).await,
-                    false => Ok(req.into_response(
-                        HttpResponse::Found()
-                            .header(header::LOCATION, "/login")
-                            .finish()
-                            .into_body(),
-                    )),
+                    true => {
+                        log::debug!("Authentication succeeded, continuing request.");
+                        srv.call(req).await
+                    }
+                    false => {
+                        log::debug!("Authentication failed, redirecting.");
+                        Ok(req.into_response(
+                            HttpResponse::Found()
+                                .header(header::LOCATION, "/login")
+                                .finish()
+                                .into_body(),
+                        ))
+                    }
                 },
                 AuthRedirectStrategy::DisallowAuth(s) => match is_logged_in {
                     false => srv.call(req).await,

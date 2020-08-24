@@ -6,8 +6,9 @@ use bson::doc;
 use chrono::{DateTime, Utc};
 /// Get username from session token
 pub async fn validate_session(token: &str) -> Result<bool, String> {
+    let hashed_token = hash_token(token);
     match session_collection()?
-        .find_one(Some(doc! {"token": token}), None)
+        .find_one(Some(doc! {"token": hashed_token}), None)
         .await
         .map_err(|e| format!("Problem querying database for token {}: {}", token, e))?
     {

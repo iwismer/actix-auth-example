@@ -29,9 +29,9 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
     let result = MAILER.lock().unwrap().send(email.into());
 
     if result.is_ok() {
-        println!("Email sent");
+        log::debug!("Email sent");
     } else {
-        println!("Could not send email: {:?}", result);
+        log::warn!("Could not send email: {:?}", result);
     }
     Ok(())
 }

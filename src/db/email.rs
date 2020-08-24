@@ -26,8 +26,9 @@ pub async fn add_email_token(
 
 /// Verify and delete an email token
 pub async fn verify_email_token(token: &str) -> Result<(), String> {
+    let hashed_token = hash_token(token);
     let token_doc = email_token_collection()?
-        .find_one(doc! { "token": hash_token(token) }, None)
+        .find_one(doc! { "token": hashed_token }, None)
         .await
         .map_err(|e| format!("Problem finding email token {}: {}", token, e))?
         .ok_or("Token not found.".to_string())?;
@@ -43,13 +44,13 @@ pub async fn verify_email_token(token: &str) -> Result<(), String> {
     user.email_validated = true;
     modify_user(user).await?;
     if email_token_collection()?
-        .delete_one(doc! { "token": token }, None)
+        .delete_one(doc! { "token": hash_token(token) }, None)
         .await
         .map_err(|e| format!("Problem deleting email token {}: {}", token, e))?
         .deleted_count
         != 1
     {
-        return Err("Invalid Token.".to_string());
+        return Err("Incorrect number of tokens deleted.".to_string());
     }
     Ok(())
 }
