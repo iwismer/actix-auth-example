@@ -46,7 +46,6 @@ pub fn csrf_cookie(csrf_token: &str) -> Cookie {
         .domain(config::COOKIE_DOMAIN.as_str())
         .path("/")
         .secure(*config::PRODUCTION)
-        .max_age(Duration::days(1).num_seconds())
         .http_only(true)
         .same_site(SameSite::Strict)
         .finish()
