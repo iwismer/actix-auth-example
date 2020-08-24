@@ -3,16 +3,16 @@ use crate::auth::credentials::generate_user_id;
 use crate::auth::credentials::{
     generate_password_hash, validate_email_rules, validate_password_rules, validate_username_rules,
 };
-use crate::auth::email::{generate_email_token, send_verification_email};
+use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
 use crate::config;
-use crate::db::email::{add_email_token, verify_email_token};
+use crate::db::email::verify_email_token;
 use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
 use actix_web::{web::Form, web::Query, HttpRequest, HttpResponse, Result};
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 /// serves the new user page
@@ -93,16 +93,8 @@ pub async fn register_post(
     add_user(user.clone())
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
-    let email_token = generate_email_token().map_err(|s| ServiceError::general(&req, s))?;
-    add_email_token(
-        &user_id,
-        &params.email,
-        &email_token,
-        Utc::now() + Duration::days(1),
-    )
-    .await
-    .map_err(|s| ServiceError::general(&req, s))?;
-    send_verification_email(&params.email, &email_token)
+    validate_email(&user_id, &params.email)
+        .await
         .map_err(|s| ServiceError::general(&req, s))?;
     let session_token = generate_session_token(&user_id)
         .await

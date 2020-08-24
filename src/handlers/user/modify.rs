@@ -5,15 +5,13 @@ use crate::auth::credentials::{
     validate_username_rules,
 };
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
-use crate::auth::email::{generate_email_token, send_verification_email};
+use crate::auth::email::validate_email;
 use crate::auth::session::get_req_user;
-use crate::db::email::add_email_token;
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
 use crate::templating::render;
 use actix_web::http::header;
 use actix_web::{web::Form, Error, HttpRequest, HttpResponse, Result};
-use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 
 pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
@@ -197,16 +195,8 @@ pub async fn change_email_post(
             format!("Invalid current password: {}", params.user_id),
         ));
     }
-    let email_token = generate_email_token().map_err(|s| ServiceError::general(&req, s))?;
-    add_email_token(
-        &user.user_id,
-        &params.new_email,
-        &email_token,
-        Utc::now() + Duration::days(1),
-    )
-    .await
-    .map_err(|s| ServiceError::general(&req, s))?;
-    send_verification_email(&params.new_email, &email_token)
+    validate_email(&user.user_id, &params.new_email)
+        .await
         .map_err(|s| ServiceError::general(&req, s))?;
     // insert user
     user.email = params.new_email.to_string();
