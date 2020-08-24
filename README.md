@@ -26,6 +26,7 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Add captcha on registration
 - [ ] Forgotten password
 - [ ] Auto retry on insertion of unique fields
+- [ ] Generic message page
 
 `docker run -it --rm --network=host iwismer/auth-example`
 

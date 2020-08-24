@@ -94,9 +94,14 @@ pub async fn register_post(
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     let email_token = generate_email_token().map_err(|s| ServiceError::general(&req, s))?;
-    add_email_token(&user_id, &email_token, Utc::now() + Duration::days(1))
-        .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+    add_email_token(
+        &user_id,
+        &params.email,
+        &email_token,
+        Utc::now() + Duration::days(1),
+    )
+    .await
+    .map_err(|s| ServiceError::general(&req, s))?;
     send_verification_email(&params.email, &email_token)
         .map_err(|s| ServiceError::general(&req, s))?;
     let session_token = generate_session_token(&user_id)
