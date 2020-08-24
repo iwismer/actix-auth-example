@@ -1,13 +1,15 @@
+use crate::config;
 /// Module that contains all the functions related to sessions.
 use crate::db::session::{add_session, get_session_user_id};
 use crate::db::user::get_user_by_userid;
 use crate::models::User;
+use actix_http::cookie::{Cookie, SameSite};
 use actix_web::HttpMessage;
 use chrono::{Duration, Utc};
 use log::warn;
 
 /// Create a session token for a specific user
-pub async fn generate_session_token(user: &str, persistant: bool) -> Result<String, String> {
+pub async fn generate_session_token(user: &str, persistant: bool) -> Result<Cookie<'_>, String> {
     let expiry = match persistant {
         false => Utc::now() + Duration::days(1),
         true => Utc::now() + Duration::days(30),
@@ -17,7 +19,19 @@ pub async fn generate_session_token(user: &str, persistant: bool) -> Result<Stri
     for i in 0..10 {
         let token = super::generate_token()?;
         match add_session(user, &token, expiry).await {
-            Ok(_) => return Ok(token),
+            Ok(_) => {
+                let mut cookie = Cookie::build("session", token.to_string())
+                    .domain(config::COOKIE_DOMAIN.as_str())
+                    .path("/")
+                    .secure(*config::PRODUCTION)
+                    .http_only(true)
+                    .same_site(SameSite::Strict)
+                    .finish();
+                if persistant {
+                    cookie.set_max_age(Duration::days(30));
+                }
+                return Ok(cookie);
+            }
             Err(e) => warn!(
                 "Problem creating session token for user {} (attempt {}/10): {}",
                 user,

@@ -6,6 +6,7 @@ pub mod csrf;
 pub mod email;
 pub mod middleware;
 pub mod session;
+pub mod totp;
 
 pub fn generate_token() -> Result<String, String> {
     let mut token = [0u8; 32];

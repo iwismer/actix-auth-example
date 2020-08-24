@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block title %}2FA Backup Codes{% endblock %} {% block content %}
+<div class="text-center title">
+  <h1>2FA backup Codes</h1>
+</div>
+<div class="content">
+  <p>Here are your backup codes. Keep them in a safe place! All previous backup codes have been invalidated.</p>
+  <ul>
+    {% for code in totp_backups %}
+    <li>{{code}}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -5,14 +5,11 @@ use crate::auth::credentials::{
 };
 use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
-use crate::config;
 use crate::db::email::verify_email_token;
 use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::render;
-use actix_http::cookie::{Cookie, SameSite};
 use actix_web::{web::Form, web::Query, HttpRequest, HttpResponse, Result};
-use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 /// serves the new user page
@@ -87,8 +84,9 @@ pub async fn register_post(
         email: params.email.to_string(),
         email_validated: false,
         pass_hash: hash,
-        otp_token: None,
-        otp_backups: None,
+        totp_active: false,
+        totp_token: None,
+        totp_backups: None,
     };
     add_user(user.clone())
         .await
@@ -96,20 +94,12 @@ pub async fn register_post(
     validate_email(&user_id, &params.email)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
-    let session_token = generate_session_token(&user_id, false)
+    let cookie = generate_session_token(&user_id, false)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .cookie(
-            Cookie::build("session", session_token)
-                .domain(config::COOKIE_DOMAIN.as_str())
-                .path("/")
-                .secure(*config::PRODUCTION)
-                .http_only(true)
-                .same_site(SameSite::Strict)
-                .finish(),
-        )
+        .cookie(cookie)
         .body(render(
             "reg_success.html",
             req.uri().path().to_string(),

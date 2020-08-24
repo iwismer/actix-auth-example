@@ -75,6 +75,10 @@ async fn main() -> std::io::Result<()> {
                     .wrap(auth::middleware::AuthCheckService::require_auth())
                     .service(web::resource("").route(web::get().to(handlers::user::view_user)))
                     .service(
+                        web::resource("/2fa")
+                            .route(web::get().to(handlers::user::totp::get_totp_page)),
+                    )
+                    .service(
                         web::resource("/{page}")
                             .guard(actix_web::guard::Get())
                             .route(web::get().to(handlers::user::modify::get_page)),
@@ -95,6 +99,14 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::resource("/password")
                             .route(web::post().to(handlers::user::modify::change_password_post)),
+                    )
+                    .service(
+                        web::resource("/2fa-add")
+                            .route(web::post().to(handlers::user::totp::add_totp_post)),
+                    )
+                    .service(
+                        web::resource("/2fa-remove")
+                            .route(web::post().to(handlers::user::totp::remove_totp_post)),
                     ),
             )
             .service(
@@ -102,6 +114,11 @@ async fn main() -> std::io::Result<()> {
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::auth::login))
                     .route(web::post().to(handlers::auth::login_post)),
+            )
+            .service(
+                web::resource("/login-2fa")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
+                    .route(web::post().to(handlers::auth::totp_post)),
             )
             .service(
                 web::resource("/register")

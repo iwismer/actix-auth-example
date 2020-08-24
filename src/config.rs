@@ -36,6 +36,8 @@ lazy_static! {
     pub static ref SESSION_COLLECTION: String = env::var("SESSION_COLLECTION").unwrap_or("sessions".to_string());
     /// The name of the email token collection in the DB
     pub static ref EMAIL_TOKEN_COLLECTION: String = env::var("EMAIL_TOKEN_COLLECTION").unwrap_or("emails".to_string());
+    /// The name of the TOTP token collection in the DB
+    pub static ref TOTP_TOKEN_COLLECTION: String = env::var("TOTP_TOKEN_COLLECTION").unwrap_or("totp".to_string());
 
     // Email Options
     /// The from email to use when sending emails

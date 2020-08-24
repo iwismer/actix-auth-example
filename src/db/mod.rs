@@ -1,7 +1,7 @@
 /// Module that contains all the DB functions.
 use crate::config::{
     AUTH_COLLECTION, DB_ADDR, DB_NAME, DB_PASS, DB_POOL_SIZE, DB_PORT, DB_USER,
-    EMAIL_TOKEN_COLLECTION, SESSION_COLLECTION,
+    EMAIL_TOKEN_COLLECTION, SESSION_COLLECTION, TOTP_TOKEN_COLLECTION,
 };
 use bson::doc;
 use bson::document::Document;
@@ -11,6 +11,7 @@ use mongodb::{options::StreamAddress, Client, Collection, Database};
 
 pub mod email;
 pub mod session;
+pub mod totp;
 pub mod user;
 
 lazy_static! {
@@ -30,6 +31,11 @@ fn session_collection() -> Result<Collection, String> {
 /// Get the collection containing all the session tokens.
 fn email_token_collection() -> Result<Collection, String> {
     Ok((*DB_CONN).as_ref()?.collection(&EMAIL_TOKEN_COLLECTION))
+}
+
+/// Get the collection containing all the session tokens.
+fn totp_token_collection() -> Result<Collection, String> {
+    Ok((*DB_CONN).as_ref()?.collection(&TOTP_TOKEN_COLLECTION))
 }
 
 /// Connect to the DB and return the connection struct.

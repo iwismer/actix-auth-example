@@ -3,7 +3,6 @@ use crate::config;
 use crate::models::ServiceError;
 use actix_http::cookie::{Cookie, SameSite};
 use actix_web::{HttpMessage, HttpRequest};
-use chrono::Duration;
 
 /// Generate a new random csrf token
 pub fn generate_csrf_token() -> Result<String, String> {

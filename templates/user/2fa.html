@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block title %}2FA{% endblock %} {% block content %}
+<div class="text-center title">
+  <h1>2FA Settings</h1>
+</div>
+<div class="content">
+  {% if user.totp_active %}
+  <!-- TODO Add link to regenerate backup codes -->
+  <form action="/user/2fa-remove" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
+    <fieldset class="text-center">
+      <input type="hidden" name="csrf" value="{{csrf}}">
+      <input type="hidden" name="user_id" value="{{user.user_id}}">
+      <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
+    </fieldset>
+    <fieldset>
+      <input type="submit" value="Remove 2FA" class="pure-button button-dark">
+    </fieldset>
+  </form>
+  {% else %}
+  <p>Scan this QR code to add it to your authenticator app.</p>
+  <img src="data:image/png;base64,{{qr_code}}" alt="TOTP QR Code" />
+  <p>Alternatively, add this token manually: {{ totp_token }}</p>
+  <form action="/user/2fa-add" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
+    <fieldset class="text-center">
+      <input type="hidden" name="csrf" value="{{csrf}}">
+      <input type="hidden" name="user_id" value="{{user.user_id}}">
+      <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
+      <input class="item-center" type="text" name="code" id="code" placeholder="One Time Password" required>
+    </fieldset>
+    <fieldset>
+      <input type="submit" value="Add 2FA" class="pure-button button-dark">
+    </fieldset>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

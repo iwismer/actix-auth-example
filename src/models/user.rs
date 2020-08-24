@@ -1,7 +1,7 @@
 /// Module for the struct that represents a single user.
 use crate::db::{get_bson_bool, get_bson_string};
-use bson::doc;
 use bson::document::Document;
+use bson::{doc, Bson};
 use serde::Serialize;
 use std::convert::TryFrom;
 
@@ -13,11 +13,9 @@ pub struct User {
     pub username: String,
     pub pass_hash: String,
     pub email_validated: bool,
-    pub otp_token: Option<String>,
-    pub otp_backups: Option<Vec<String>>,
-    // TODO user privileges
-    // TODO profile picture?
-    // TODO OAuth tokens
+    pub totp_active: bool,
+    pub totp_token: Option<String>,
+    pub totp_backups: Option<Vec<String>>,
 }
 
 impl TryFrom<Document> for User {
@@ -30,9 +28,22 @@ impl TryFrom<Document> for User {
             username: get_bson_string("username", &item)?,
             pass_hash: get_bson_string("pass_hash", &item)?,
             email_validated: get_bson_bool("email_validated", &item)?,
-            otp_token: get_bson_string("otp_token", &item).ok(),
-            // TODO
-            otp_backups: None,
+            totp_active: get_bson_bool("totp_active", &item)?,
+            totp_token: get_bson_string("totp_token", &item).ok(),
+            totp_backups: match item.get_array("totp_backups") {
+                Ok(arr) => Some(
+                    arr.iter()
+                        .filter_map(|b| match b {
+                            Bson::String(s) => Some(s.to_string()),
+                            _ => None,
+                        })
+                        .collect(),
+                ),
+                Err(e) => {
+                    log::warn!("{}", e);
+                    None
+                }
+            },
         })
     }
 }
@@ -40,14 +51,23 @@ impl TryFrom<Document> for User {
 #[allow(unused_variables)]
 impl From<User> for Document {
     fn from(item: User) -> Self {
+        let totp_token = match item.totp_token {
+            Some(s) => Bson::String(s),
+            None => Bson::Null,
+        };
+        let totp_backups = match item.totp_backups {
+            Some(arr) => Bson::Array(arr.iter().map(|s| Bson::String(s.to_string())).collect()),
+            None => Bson::Null,
+        };
         doc! {
             "user_id": item.user_id,
             "email": item.email,
             "username": item.username,
             "pass_hash": item.pass_hash,
             "email_validated": item.email_validated,
-            // TODO
-            // "otp_token": item.otp_token,
+            "totp_active": item.totp_active,
+            "totp_token": totp_token,
+            "totp_backups": totp_backups,
         }
     }
 }

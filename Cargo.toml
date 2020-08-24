@@ -29,6 +29,10 @@ tera = "1.5.0"
 unicode-normalization = "0.1"
 url = "2.1.1"
 
+[dependencies.totp-rs]
+version = "~0.6"
+features = ["qr"]
+
 [profile.release]
 lto = true
 codegen-units = 1

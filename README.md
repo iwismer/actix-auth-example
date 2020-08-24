@@ -9,6 +9,7 @@ I also hope that other people might find it a useful reference when implementing
 
 - [x] Add a user ID to the user DB
 - [ ] Add OTP and backup codes (https://github.com/constantoine/totp-rs)
+- [ ] Show backup codes after OTP, allow regenerating backup codes
 - [x] password unicode normalization
 - [x] Allow changing password, username, email
 - [x] Validate email
@@ -27,7 +28,8 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Forgotten password
 - [ ] Auto retry on insertion of unique fields
 - [ ] Generic message page
-- [ ] time delay lockout to prevent brute force
+- [ ] Time delay lockout to prevent brute force (credentials and TOTP)
+- [ ] Split login tokens from session tokens?
 
 `docker run -it --rm --network=host iwismer/auth-example`
 

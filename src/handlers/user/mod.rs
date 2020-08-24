@@ -7,6 +7,7 @@ use actix_web::{Error, HttpRequest, HttpResponse, Result};
 pub mod delete;
 pub mod modify;
 pub mod register;
+pub mod totp;
 
 /// Page to view the user's details
 /// TODO
