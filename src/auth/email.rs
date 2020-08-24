@@ -28,7 +28,10 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
         .build()
         .unwrap();
 
-    let result = MAILER.lock().unwrap().send(email.into());
+    let result = MAILER
+        .lock()
+        .map_err(|e| format!("Error unlocking mailer: {}", e))?
+        .send(email.into());
 
     if result.is_ok() {
         log::debug!("Email sent");
