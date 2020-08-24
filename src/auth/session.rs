@@ -7,8 +7,11 @@ use chrono::{Duration, Utc};
 use log::warn;
 
 /// Create a session token for a specific user
-pub async fn generate_session_token(user: &str) -> Result<String, String> {
-    let expiry = Utc::now() + Duration::days(1);
+pub async fn generate_session_token(user: &str, persistant: bool) -> Result<String, String> {
+    let expiry = match persistant {
+        false => Utc::now() + Duration::days(1),
+        true => Utc::now() + Duration::days(30),
+    };
     // Try a few times to create a token, in case of a token that is not unique (Unlikely!)
     // Only repeat 10 times to prevent an infinite loop
     for i in 0..10 {

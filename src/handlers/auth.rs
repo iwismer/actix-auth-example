@@ -9,7 +9,7 @@ use crate::db::session::delete_session;
 use crate::models::ServiceError;
 use crate::templating::render;
 use actix_http::cookie::{Cookie, SameSite};
-use actix_web::{http::header, web, Error};
+use actix_web::{http::header, web::Form, Error};
 use actix_web::{HttpRequest, HttpResponse};
 use chrono::Duration;
 use log::{info, warn};
@@ -31,12 +31,13 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
 pub struct LoginParams {
     username: String,
     password: String,
+    persist: Option<bool>,
 }
 
 /// Handler for the login post request
 pub async fn login_post(
     req: HttpRequest,
-    params: web::Form<LoginParams>,
+    params: Form<LoginParams>,
 ) -> Result<HttpResponse, ServiceError> {
     if params.username.bytes().len() > 8192 || params.password.bytes().len() > 8192 {
         return Err(ServiceError::bad_request(
@@ -49,24 +50,25 @@ pub async fn login_post(
         .map_err(|s| ServiceError::general(&req, s))?
     {
         Some(user) => {
-            let session_token = generate_session_token(&user.user_id)
-                .await
-                .map_err(|s| ServiceError::general(&req, s))?;
+            let session_token =
+                generate_session_token(&user.user_id, params.persist.unwrap_or(false))
+                    .await
+                    .map_err(|s| ServiceError::general(&req, s))?;
 
             info!("Successfully logged in user: {}", params.username);
-
+            let mut cookie = Cookie::build("session", session_token)
+                .domain(config::COOKIE_DOMAIN.as_str())
+                .path("/")
+                .secure(*config::PRODUCTION)
+                .http_only(true)
+                .same_site(SameSite::Strict)
+                .finish();
+            if params.persist.unwrap_or(false) {
+                cookie.set_max_age(Duration::days(30));
+            }
             Ok(HttpResponse::SeeOther()
                 .header(header::LOCATION, "/zone")
-                .cookie(
-                    Cookie::build("session", session_token)
-                        .domain(config::COOKIE_DOMAIN.as_str())
-                        .path("/")
-                        .secure(*config::PRODUCTION)
-                        .max_age(Duration::days(1).num_seconds())
-                        .http_only(true)
-                        .same_site(SameSite::Strict)
-                        .finish(),
-                )
+                .cookie(cookie)
                 .finish())
         }
         None => {

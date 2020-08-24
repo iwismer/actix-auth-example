@@ -21,12 +21,13 @@ I also hope that other people might find it a useful reference when implementing
   - display on the profile page
 - [x] Logout button in menu if logged in
 - [x] redirect away from login page if logged in
-- [ ] Keep me signed in checkbox (also set session key on each request)
+- [x] Keep me signed in checkbox (also set session key on each request)
 - [ ] Use client side redirects
-- [ ] Add captcha on registration
+- [ ] Add captcha on registration?
 - [ ] Forgotten password
 - [ ] Auto retry on insertion of unique fields
 - [ ] Generic message page
+- [ ] time delay lockout to prevent brute force
 
 `docker run -it --rm --network=host iwismer/auth-example`
 
@@ -58,3 +59,7 @@ use admin
 db.auth("", "")
 use authentication
 ```
+
+## Docs:
+
+<https://stackoverflow.com/questions/549/the-definitive-guide-to-form-based-website-authentication#477579>

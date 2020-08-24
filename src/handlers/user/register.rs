@@ -96,7 +96,7 @@ pub async fn register_post(
     validate_email(&user_id, &params.email)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
-    let session_token = generate_session_token(&user_id)
+    let session_token = generate_session_token(&user_id, false)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
     Ok(HttpResponse::Ok()
@@ -106,7 +106,6 @@ pub async fn register_post(
                 .domain(config::COOKIE_DOMAIN.as_str())
                 .path("/")
                 .secure(*config::PRODUCTION)
-                .max_age(Duration::days(1).num_seconds())
                 .http_only(true)
                 .same_site(SameSite::Strict)
                 .finish(),
