@@ -1,14 +1,14 @@
 {% extends "base.html" %} {% block title %}Login{% endblock %} {% block content %}
 <div class="text-center title">
   <h1>Login using 2nd Factor</h1>
+  <p>Enter the code from your authenticator app. If you don't have access to your authenticator, enter a backup code.</p>
 </div>
 <div class="content">
   <form action="/login-2fa" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center">
       <input class="item-center" type="text" name="code" id="code" placeholder="One Time Password" required>
-      <input type="submit" value="Submit" class="pure-button button-dark">
+      <input type="submit" value="Submit" class="item-center pure-button button-dark">
     </fieldset>
   </form>
-  <a href="">Use backup code</a>
 </div>
 {% endblock %}

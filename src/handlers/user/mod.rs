@@ -13,7 +13,7 @@ pub mod totp;
 /// TODO
 pub async fn view_user(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
-        "user.html",
+        "user/user.html",
         req.uri().path().to_string(),
         None::<i32>,
         get_req_user(&req).await.map_err(|e| {
