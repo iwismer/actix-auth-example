@@ -126,7 +126,7 @@ pub async fn add_totp_post(
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct RemoveTotpForm {
+pub struct ChangeTotpForm {
     current_password: String,
     user_id: String,
     csrf: String,
@@ -135,7 +135,7 @@ pub struct RemoveTotpForm {
 /// Accepts the post request to create a new user
 pub async fn remove_totp_post(
     req: HttpRequest,
-    params: Form<RemoveTotpForm>,
+    params: Form<ChangeTotpForm>,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     let mut user = match get_user_by_userid(&params.user_id)
@@ -168,4 +168,49 @@ pub async fn remove_totp_post(
         .content_type("text/html")
         .header(header::LOCATION, "/user")
         .finish())
+}
+
+/// Accepts the post request to create a new user
+pub async fn reset_backup_totp_post(
+    req: HttpRequest,
+    params: Form<ChangeTotpForm>,
+) -> Result<HttpResponse, ServiceError> {
+    check_csrf(Some(&params.csrf), &req).await?;
+    let mut user = match get_user_by_userid(&params.user_id)
+        .await
+        .map_err(|s| ServiceError::general(&req, s))?
+    {
+        Some(u) => u,
+        None => {
+            return Err(ServiceError::bad_request(
+                &req,
+                format!("User doesn't exist: {}", params.user_id),
+            ))
+        }
+    };
+    if !credential_validator(&user, &params.current_password)
+        .map_err(|e| ServiceError::general(&req, e))?
+    {
+        return Err(ServiceError::bad_request(
+            &req,
+            format!("Invalid current password: {}", params.user_id),
+        ));
+    }
+    // insert user
+    let backup_codes = generate_totp_backup_codes().map_err(|s| {
+        ServiceError::general(&req, format!("Problem generating backup codes: {}", s))
+    })?;
+    user.totp_backups = Some(backup_codes.clone());
+    modify_user(user.clone())
+        .await
+        .map_err(|s| ServiceError::bad_request(&req, s))?;
+    log::debug!("Modified user");
+    Ok(HttpResponse::Ok().content_type("text/html").body(render(
+        "user/2fa_backup.html",
+        req.uri().path().to_string(),
+        Some(TotpBackupContext {
+            totp_backups: backup_codes,
+        }),
+        Some(user),
+    )?))
 }

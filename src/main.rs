@@ -105,6 +105,10 @@ async fn main() -> std::io::Result<()> {
                             .route(web::post().to(handlers::user::totp::add_totp_post)),
                     )
                     .service(
+                        web::resource("/2fa-reset")
+                            .route(web::post().to(handlers::user::totp::reset_backup_totp_post)),
+                    )
+                    .service(
                         web::resource("/2fa-remove")
                             .route(web::post().to(handlers::user::totp::remove_totp_post)),
                     ),

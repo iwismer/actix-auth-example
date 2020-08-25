@@ -5,6 +5,19 @@
 <div class="content">
   {% if user.totp_active %}
   <!-- TODO Add link to regenerate backup codes -->
+  <h2>Reset Backup Codes</h2>
+  <form action="/user/2fa-reset" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
+    <fieldset class="text-center">
+      <input type="hidden" name="csrf" value="{{csrf}}">
+      <input type="hidden" name="user_id" value="{{user.user_id}}">
+      <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
+    </fieldset>
+    <fieldset>
+      <input type="submit" value="Reset 2FA Backup Codes" class="item-center pure-button button-dark">
+    </fieldset>
+  </form>
+  <hr>
+  <h2>Delete 2FA</h2>
   <form action="/user/2fa-remove" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center">
       <input type="hidden" name="csrf" value="{{csrf}}">
