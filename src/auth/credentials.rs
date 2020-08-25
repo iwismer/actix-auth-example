@@ -28,7 +28,6 @@ pub fn generate_user_id() -> Result<String, String> {
 /// Check if the username + password pair are valid
 /// TODO allow either email or username
 pub fn credential_validator(user: &User, password: &str) -> Result<bool, String> {
-    // TODO return full user
     Ok(verify_encoded(
         &user.pass_hash,
         password.nfkc().collect::<String>().as_bytes(),
@@ -37,12 +36,10 @@ pub fn credential_validator(user: &User, password: &str) -> Result<bool, String>
 }
 
 /// Check if the username + password pair are valid
-/// TODO allow either email or username
 pub async fn credential_validator_username(
     username: &str,
     password: &str,
 ) -> Result<Option<User>, String> {
-    // TODO return full user
     let user = get_user_by_username(username)
         .await?
         .ok_or(format!("User doesn't exist: {}", username))?;
@@ -76,7 +73,6 @@ pub fn validate_username_rules(username: &str) -> Result<(), String> {
 }
 
 pub fn validate_email_rules(email: &str) -> Result<(), String> {
-    // TODO check for a better regex
     let re = Regex::new(
         r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
     )

@@ -4,7 +4,6 @@
 </div>
 <div class="content">
   {% if user.totp_active %}
-  <!-- TODO Add link to regenerate backup codes -->
   <h2>Reset Backup Codes</h2>
   <form action="/user/2fa-reset" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center item-center">

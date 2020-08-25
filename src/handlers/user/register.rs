@@ -74,10 +74,8 @@ pub async fn register_post(
     let hash =
         generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
     // insert user
-    let user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s))?;
-    let user = User {
-        // TODO Maybe just use the monfodb _id??
-        user_id: user_id.to_string(),
+    let mut user = User {
+        user_id: "".to_string(),
         username: params.username.to_string(),
         email: params.email.to_string(),
         email_validated: false,
@@ -86,9 +84,33 @@ pub async fn register_post(
         totp_token: None,
         totp_backups: None,
     };
-    add_user(user.clone())
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s))?;
+    let mut user_error: Option<String> = None;
+    let mut user_id = "".to_string();
+    for i in 0..10 {
+        user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s))?;
+        user.user_id = user_id.to_string();
+        match add_user(user.clone()).await {
+            Ok(_) => {
+                user_error = None;
+                break;
+            }
+            Err(e) => {
+                log::warn!(
+                    "Problem creating totp token for user {} (attempt {}/10): {}",
+                    user_id,
+                    i + 1,
+                    e
+                );
+                user_error = Some(e);
+            }
+        }
+    }
+    if let Some(e) = user_error {
+        return Err(ServiceError::general(
+            &req,
+            format!("Error generating reset token: {}", e),
+        ));
+    }
     validate_email(&user_id, &params.email)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
@@ -99,7 +121,7 @@ pub async fn register_post(
         .content_type("text/html")
         .cookie(cookie)
         .body(render_message(
-            "Regetration Success",
+            "Registration Success",
             "Welcome! You've successfully registered.",
             &format!("A verification email has been sent to: {}. Follow the link in the message to verify your email.", params.email),
             req.uri().path().to_string(),

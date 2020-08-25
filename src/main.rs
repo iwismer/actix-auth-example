@@ -68,7 +68,6 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/zone")
                     .wrap(auth::middleware::AuthCheckService::require_auth())
                     .service(web::resource("").route(web::get().to(handlers::zone))),
-                // TODO have some other various pages here
             )
             .service(
                 web::scope("/user")

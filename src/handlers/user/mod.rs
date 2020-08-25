@@ -11,7 +11,6 @@ pub mod register;
 pub mod totp;
 
 /// Page to view the user's details
-/// TODO
 pub async fn view_user(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "user/user.html",

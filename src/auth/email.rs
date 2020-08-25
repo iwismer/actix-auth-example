@@ -42,13 +42,35 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
 }
 
 pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(), String> {
-    let password_reset_token = super::generate_token()?;
-    add_password_reset_token(
-        user_id,
-        &password_reset_token,
-        Utc::now() + Duration::days(1),
-    )
-    .await?;
+    let mut password_reset_token = "".to_string();
+    let mut error: Option<String> = None;
+    for i in 0..10 {
+        password_reset_token = super::generate_token()?;
+        match add_password_reset_token(
+            user_id,
+            &password_reset_token,
+            Utc::now() + Duration::days(1),
+        )
+        .await
+        {
+            Ok(_) => {
+                error = None;
+                break;
+            }
+            Err(e) => {
+                log::warn!(
+                    "Problem creating email token for user {} (attempt {}/10): {}",
+                    user_id,
+                    i + 1,
+                    e
+                );
+                error = Some(e);
+            }
+        }
+    }
+    if let Some(e) = error {
+        return Err(format!("Error generating reset token: {}", e));
+    }
     let email = EmailBuilder::new()
         .to(email)
         .from(config::EMAIL_FROM.as_str())

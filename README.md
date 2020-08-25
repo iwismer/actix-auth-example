@@ -26,8 +26,8 @@ I also hope that other people might find it a useful reference when implementing
 - [ ] Use client side redirects
 - [ ] Add captcha on registration?
 - [x] Forgotten password
-- [ ] Auto retry on insertion of unique fields
-- [ ] Generic message page
+- [x] Auto retry on insertion of unique fields
+- [x] Generic message page
 - [ ] Time delay lockout to prevent brute force (credentials and TOTP)
 - [ ] Split login tokens from session tokens?
 
@@ -38,9 +38,19 @@ I also hope that other people might find it a useful reference when implementing
 ```
 db.createCollection("users", {})
 db.createCollection("sessions", {})
+db.createCollection("emails", {})
+db.createCollection("totp", {})
+db.createCollection("password-reset", {})
+
 db.sessions.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
+db.email.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
+db.totp.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
+db.password-reset.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
+
 db.sessions.createIndex( { "token": 1 }, { unique: true } )
 db.emails.createIndex( { "token": 1 }, { unique: true } )
+db.totp.createIndex( { "token": 1 }, { unique: true } )
+db.password-reset.createIndex( { "token": 1 }, { unique: true } )
 db.users.createIndex( { "user_id": 1 }, { unique: true } )
 db.users.createIndex( { "username": 1 }, { unique: true } )
 ```
