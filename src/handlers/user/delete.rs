@@ -4,7 +4,7 @@ use crate::db::user::{delete_user, get_user_by_userid};
 use crate::models::ServiceError;
 use crate::templating::render_message;
 
-use actix_web::{http::header, web::Form, HttpRequest, HttpResponse, Result};
+use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
 /// Struct for the delete user form fields

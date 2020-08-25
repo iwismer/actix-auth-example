@@ -147,8 +147,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/logout").route(web::get().to(handlers::auth::logout)))
             .service(
-                web::resource("/email")
-                    .route(web::get().to(handlers::user::register::verify_email)),
+                web::resource("/email").route(web::get().to(handlers::user::email::verify_email)),
             )
             // Favicon handler so that it doesn't try to render it.
             .service(web::resource("/favicon.ico").to(|| HttpResponse::NotFound()))

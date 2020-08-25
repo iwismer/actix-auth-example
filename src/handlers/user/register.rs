@@ -5,15 +5,13 @@ use crate::auth::credentials::{
 };
 use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
-use crate::db::email::verify_email_token;
 use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::{render, render_message};
 
-use actix_web::web::{Form, Query};
+use actix_web::web::Form;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// serves the new user page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
@@ -126,29 +124,5 @@ pub async fn register_post(
             &format!("A verification email has been sent to: {}. Follow the link in the message to verify your email.", params.email),
             req.uri().path().to_string(),
             Some(user),
-        )?))
-}
-
-/// serves the new user page
-pub async fn verify_email(
-    req: HttpRequest,
-    query: Query<HashMap<String, String>>,
-) -> Result<HttpResponse, ServiceError> {
-    let token = query
-        .get("token")
-        .ok_or(ServiceError::bad_request(&req, "Missing token in request."))?;
-    verify_email_token(&token)
-        .await
-        .map_err(|s| ServiceError::general(&req, s))?;
-    Ok(HttpResponse::Ok()
-        .content_type("text/html")
-        .body(render_message(
-            "Email Verified",
-            "Email Verified Successfully.",
-            "You can now close this tab.",
-            req.uri().path().to_string(),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e))
-            })?,
         )?))
 }
