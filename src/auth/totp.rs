@@ -1,7 +1,7 @@
 use crate::config;
 use crate::db::totp::add_totp_token;
-use crate::db::user::get_user_by_userid;
-use crate::db::user::modify_user;
+use crate::db::user::{get_user_by_userid, modify_user};
+
 use actix_http::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
 use totp_rs::{Algorithm, TOTP};

@@ -1,8 +1,9 @@
-use crate::config;
 /// Module that contains all the functions related to sessions.
+use crate::config;
 use crate::db::session::{add_session, get_session_user_id};
 use crate::db::user::get_user_by_userid;
 use crate::models::User;
+
 use actix_http::cookie::{Cookie, SameSite};
 use actix_web::HttpMessage;
 use chrono::{Duration, Utc};

@@ -1,5 +1,6 @@
 /// Module for endpoints related to adding new users
 use super::super::CSRFContext;
+
 use crate::auth::credentials::{
     credential_validator, generate_password_hash, validate_email_rules, validate_password_rules,
     validate_username_rules,
@@ -10,6 +11,7 @@ use crate::auth::session::get_req_user;
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
 use crate::templating::render;
+
 use actix_web::http::header;
 use actix_web::{web::Form, Error, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};

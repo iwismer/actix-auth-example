@@ -1,7 +1,8 @@
-use crate::auth::session::get_req_user;
 /// Module that contains all the handler functions for the web endpoints in the website.
+use crate::auth::session::get_req_user;
 use crate::models::ServiceError;
 use crate::templating::render;
+
 use actix_web::{Error, HttpRequest, HttpResponse, Result};
 use serde::Serialize;
 

@@ -1,9 +1,12 @@
 /// Module that contains all the DB functions related to authentication.
 use super::{session_collection, users_collection};
+
 use crate::models::User;
+
 use bson::doc;
 use mongodb::options::UpdateModifications;
 use std::convert::TryFrom;
+
 /// Get a single user from the DB
 pub async fn get_user_by_username(username: &str) -> Result<Option<User>, String> {
     Ok(

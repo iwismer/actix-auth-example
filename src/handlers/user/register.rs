@@ -1,7 +1,7 @@
 /// Module for endpoints related to adding new users
-use crate::auth::credentials::generate_user_id;
 use crate::auth::credentials::{
-    generate_password_hash, validate_email_rules, validate_password_rules, validate_username_rules,
+    generate_password_hash, generate_user_id, validate_email_rules, validate_password_rules,
+    validate_username_rules,
 };
 use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
@@ -9,9 +9,12 @@ use crate::db::email::verify_email_token;
 use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
 use crate::templating::{render, render_message};
-use actix_web::{web::Form, web::Query, HttpRequest, HttpResponse, Result};
+
+use actix_web::web::{Form, Query};
+use actix_web::{HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
 /// serves the new user page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(

@@ -1,14 +1,10 @@
 /// Module that contains all the DB functions.
-use crate::config::{
-    AUTH_COLLECTION, DB_ADDR, DB_NAME, DB_PASS, DB_POOL_SIZE, DB_PORT, DB_USER,
-    EMAIL_TOKEN_COLLECTION, PASSWORD_RESET_TOKEN_COLLECTION, SESSION_COLLECTION,
-    TOTP_TOKEN_COLLECTION,
-};
-use bson::doc;
-use bson::document::Document;
+use crate::config;
+
+use bson::{doc, document::Document};
 use lazy_static::lazy_static;
-use mongodb::options::ClientOptions;
-use mongodb::{options::StreamAddress, Client, Collection, Database};
+use mongodb::options::{ClientOptions, StreamAddress};
+use mongodb::{Client, Collection, Database};
 
 pub mod email;
 pub mod session;
@@ -21,29 +17,33 @@ lazy_static! {
 
 /// Get the collection containing all the users.
 fn users_collection() -> Result<Collection, String> {
-    Ok((*DB_CONN).as_ref()?.collection(&AUTH_COLLECTION))
+    Ok((*DB_CONN).as_ref()?.collection(&config::AUTH_COLLECTION))
 }
 
 /// Get the collection containing all the session tokens.
 fn session_collection() -> Result<Collection, String> {
-    Ok((*DB_CONN).as_ref()?.collection(&SESSION_COLLECTION))
+    Ok((*DB_CONN).as_ref()?.collection(&config::SESSION_COLLECTION))
 }
 
 /// Get the collection containing all the session tokens.
 fn email_token_collection() -> Result<Collection, String> {
-    Ok((*DB_CONN).as_ref()?.collection(&EMAIL_TOKEN_COLLECTION))
+    Ok((*DB_CONN)
+        .as_ref()?
+        .collection(&config::EMAIL_TOKEN_COLLECTION))
 }
 
 /// Get the collection containing all the session tokens.
 fn totp_token_collection() -> Result<Collection, String> {
-    Ok((*DB_CONN).as_ref()?.collection(&TOTP_TOKEN_COLLECTION))
+    Ok((*DB_CONN)
+        .as_ref()?
+        .collection(&config::TOTP_TOKEN_COLLECTION))
 }
 
 /// Get the collection containing all the session tokens.
 fn password_reset_token_collection() -> Result<Collection, String> {
     Ok((*DB_CONN)
         .as_ref()?
-        .collection(&PASSWORD_RESET_TOKEN_COLLECTION))
+        .collection(&config::PASSWORD_RESET_TOKEN_COLLECTION))
 }
 
 /// Connect to the DB and return the connection struct.
@@ -51,28 +51,28 @@ fn password_reset_token_collection() -> Result<Collection, String> {
 fn connect_to_db() -> Result<Database, String> {
     let mut client_options = ClientOptions::builder()
         .hosts(vec![StreamAddress {
-            hostname: DB_ADDR.to_string(),
-            port: Some(*DB_PORT),
+            hostname: config::DB_ADDR.to_string(),
+            port: Some(*config::DB_PORT),
         }])
-        .max_pool_size(Some(*DB_POOL_SIZE))
+        .max_pool_size(Some(*config::DB_POOL_SIZE))
         .build();
-    if DB_PASS.is_some() || DB_USER.is_some() {
+    if config::DB_PASS.is_some() || config::DB_USER.is_some() {
         client_options.credential = Some(
             mongodb::options::Credential::builder()
-                .username(DB_USER.to_owned())
-                .password(DB_PASS.to_owned())
+                .username(config::DB_USER.to_owned())
+                .password(config::DB_PASS.to_owned())
                 .build(),
         );
     }
     let client = Client::with_options(client_options).map_err(|e| {
         format!(
             "Failed to connect to MongoDB at `mongodb://{}:{}`: {}",
-            DB_ADDR.to_string(),
-            *DB_PORT,
+            config::DB_ADDR.to_string(),
+            *config::DB_PORT,
             e
         )
     })?;
-    let db = client.database(&DB_NAME);
+    let db = client.database(&config::DB_NAME);
     Ok(db)
 }
 

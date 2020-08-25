@@ -1,6 +1,8 @@
-use super::session::get_session_token;
 /// Module that contains all the auth middleware.
+use super::session::get_session_token;
+
 use crate::db::session::validate_session;
+
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header;

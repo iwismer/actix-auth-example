@@ -25,7 +25,7 @@ I also hope that other people might find it a useful reference when implementing
 - [x] Keep me signed in checkbox (also set session key on each request)
 - [ ] Use client side redirects
 - [ ] Add captcha on registration?
-- [ ] Forgotten password
+- [x] Forgotten password
 - [ ] Auto retry on insertion of unique fields
 - [ ] Generic message page
 - [ ] Time delay lockout to prevent brute force (credentials and TOTP)

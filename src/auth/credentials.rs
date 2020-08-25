@@ -1,6 +1,7 @@
 /// Module that contains all the functions related to credentials.
 use crate::db::user::get_user_by_username;
 use crate::models::User;
+
 use argon2::{hash_encoded, verify_encoded, Config};
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;

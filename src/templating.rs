@@ -1,5 +1,6 @@
 /// Module that contains all the template rendering functions.
 use crate::models::{ServiceError, User};
+
 use actix_web::{http::StatusCode, Result};
 use lazy_static::lazy_static;
 use log::debug;

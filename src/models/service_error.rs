@@ -1,7 +1,9 @@
 /// Module for the ServiceError struct.
 use crate::config;
 use crate::templating::render;
-use actix_web::{http::header, http::StatusCode, HttpRequest, HttpResponse, ResponseError};
+
+use actix_web::http::{header, StatusCode};
+use actix_web::{HttpRequest, HttpResponse, ResponseError};
 use log::error;
 use serde::Serialize;
 use std::fmt;

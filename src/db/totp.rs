@@ -1,6 +1,8 @@
 /// Module that contains all the DB functions related to authentication.
 use super::{get_bson_bool, get_bson_string, totp_token_collection};
+
 use crate::auth::hash_token;
+
 use bson::doc;
 use chrono::{DateTime, Utc};
 

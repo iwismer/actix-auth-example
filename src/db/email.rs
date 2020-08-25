@@ -1,9 +1,11 @@
-use super::get_bson_string;
 /// Module that contains all the DB functions related to authentication.
+use super::get_bson_string;
 use super::user::{get_user_by_userid, modify_user};
 use super::{email_token_collection, password_reset_token_collection};
+
 use crate::auth::hash_token;
 use crate::models::User;
+
 use bson::doc;
 use chrono::{DateTime, Utc};
 

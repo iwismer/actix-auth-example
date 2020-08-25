@@ -1,6 +1,7 @@
 /// Module that contains all the functions related to authentication.
 use hex::encode;
 use sha2::{Digest, Sha256};
+
 pub mod credentials;
 pub mod csrf;
 pub mod email;

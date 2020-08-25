@@ -13,9 +13,11 @@ use crate::db::totp::{check_totp_token_exists, verify_totp_token};
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
 use crate::templating::{render, render_message};
+
 use actix_http::cookie::Cookie;
-use actix_web::{http::header, web::Form, Error};
-use actix_web::{web::Query, HttpMessage, HttpRequest, HttpResponse, Result};
+use actix_web::http::header;
+use actix_web::web::{Form, Query};
+use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse, Result};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

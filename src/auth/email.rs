@@ -1,9 +1,9 @@
 use crate::config;
 use crate::db::email::{add_email_token, add_password_reset_token};
+
 use chrono::{Duration, Utc};
 use lazy_static::lazy_static;
-use lettre::Transport;
-use lettre::{smtp::authentication::Credentials, SmtpClient, SmtpTransport};
+use lettre::{smtp::authentication::Credentials, SmtpClient, SmtpTransport, Transport};
 use lettre_email::EmailBuilder;
 use std::sync::Mutex;
 

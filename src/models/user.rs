@@ -1,7 +1,7 @@
 /// Module for the struct that represents a single user.
 use crate::db::{get_bson_bool, get_bson_string};
-use bson::document::Document;
-use bson::{doc, Bson};
+
+use bson::{doc, document::Document, Bson};
 use serde::Serialize;
 use std::convert::TryFrom;
 

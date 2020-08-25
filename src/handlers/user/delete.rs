@@ -2,6 +2,7 @@
 use crate::auth::{credentials::credential_validator, csrf::check_csrf};
 use crate::db::user::{delete_user, get_user_by_userid};
 use crate::models::ServiceError;
+
 use actix_web::{http::header, web::Form, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +16,6 @@ pub struct DeleteUserParams {
 }
 
 /// Accepts the post request to create a new user
-/// TODO make it so you can only delete your own user (get the user from the session?)
 pub async fn delete_user_post(
     req: HttpRequest,
     params: Form<DeleteUserParams>,

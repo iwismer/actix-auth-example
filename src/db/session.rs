@@ -1,9 +1,11 @@
 /// Module that contains all the DB functions related to authentication.
-use super::get_bson_string;
-use super::session_collection;
+use super::{get_bson_string, session_collection};
+
 use crate::auth::hash_token;
+
 use bson::doc;
 use chrono::{DateTime, Utc};
+
 /// Get username from session token
 pub async fn validate_session(token: &str) -> Result<bool, String> {
     let hashed_token = hash_token(token);

@@ -1,16 +1,16 @@
 /// This is an example for using different auths with actix
+use actix_files::Files;
+use actix_http::http::{PathAndQuery, Uri};
+use actix_service::Service;
+use actix_web::{http::header, middleware, web, App, HttpResponse, HttpServer};
+use log::info;
+
 mod auth;
 mod config;
 mod db;
 mod handlers;
 mod models;
 mod templating;
-
-use actix_files::Files;
-use actix_http::http::{PathAndQuery, Uri};
-use actix_service::Service;
-use actix_web::{http::header, middleware, web, App, HttpResponse, HttpServer};
-use log::info;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
