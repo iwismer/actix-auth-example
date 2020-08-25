@@ -1,5 +1,5 @@
 use crate::config;
-use crate::db::email::add_email_token;
+use crate::db::email::{add_email_token, add_password_reset_token};
 use chrono::{Duration, Utc};
 use lazy_static::lazy_static;
 use lettre::Transport;
@@ -25,6 +25,35 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
         .from(config::EMAIL_FROM.as_str())
         .subject("Rust Authentication Example: Email Verification.")
         .text(format!("This email was used to register for the Rust Authentication Example. To verify your email follow this link: {}email?token={}", config::DOMAIN.as_str(), token))
+        .build()
+        .unwrap();
+
+    let result = MAILER
+        .lock()
+        .map_err(|e| format!("Error unlocking mailer: {}", e))?
+        .send(email.into());
+
+    if result.is_ok() {
+        log::debug!("Email sent");
+    } else {
+        log::warn!("Could not send email: {:?}", result);
+    }
+    Ok(())
+}
+
+pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(), String> {
+    let password_reset_token = super::generate_token()?;
+    add_password_reset_token(
+        user_id,
+        &password_reset_token,
+        Utc::now() + Duration::days(1),
+    )
+    .await?;
+    let email = EmailBuilder::new()
+        .to(email)
+        .from(config::EMAIL_FROM.as_str())
+        .subject("Rust Authentication Example: Password Reset")
+        .text(format!("The account associated with this email has had a password reset request. Click this link to reset the password: {}password-reset?token={}", config::DOMAIN.as_str(), password_reset_token))
         .build()
         .unwrap();
 

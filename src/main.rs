@@ -125,6 +125,18 @@ async fn main() -> std::io::Result<()> {
                     .route(web::post().to(handlers::auth::totp_post)),
             )
             .service(
+                web::resource("/forgot-password")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
+                    .route(web::get().to(handlers::auth::forgot_password_get))
+                    .route(web::post().to(handlers::auth::forgot_password_post)),
+            )
+            .service(
+                web::resource("/password-reset")
+                    .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
+                    .route(web::get().to(handlers::auth::password_reset_get))
+                    .route(web::post().to(handlers::auth::password_reset_post)),
+            )
+            .service(
                 web::resource("/register")
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::user::register::register_get))

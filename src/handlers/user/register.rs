@@ -33,11 +33,6 @@ pub struct NewUserParams {
     password_confirm: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct RegSuccessContext {
-    email: String,
-}
-
 /// Accepts the post request to create a new user
 pub async fn register_post(
     req: HttpRequest,
