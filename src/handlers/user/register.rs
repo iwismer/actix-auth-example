@@ -8,7 +8,7 @@ use crate::auth::session::{generate_session_token, get_req_user};
 use crate::db::email::verify_email_token;
 use crate::db::user::{add_user, get_user_by_username};
 use crate::models::{ServiceError, User};
-use crate::templating::render;
+use crate::templating::{render, render_message};
 use actix_web::{web::Form, web::Query, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -100,12 +100,11 @@ pub async fn register_post(
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .cookie(cookie)
-        .body(render(
-            "reg_success.html",
+        .body(render_message(
+            "Regetration Success",
+            "Welcome! You've successfully registered.",
+            &format!("A verification email has been sent to: {}. Follow the link in the message to verify your email.", params.email),
             req.uri().path().to_string(),
-            Some(RegSuccessContext {
-                email: params.email.to_string(),
-            }),
             Some(user),
         )?))
 }
@@ -121,12 +120,15 @@ pub async fn verify_email(
     verify_email_token(&token)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
-    Ok(HttpResponse::Ok().content_type("text/html").body(render(
-        "email_verify_success.html",
-        req.uri().path().to_string(),
-        None::<i32>,
-        get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e))
-        })?,
-    )?))
+    Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(render_message(
+            "Email Verified",
+            "Email Verified Successfully.",
+            "You can now close this tab.",
+            req.uri().path().to_string(),
+            get_req_user(&req).await.map_err(|e| {
+                ServiceError::general(&req, format!("Error getting request user: {}", e))
+            })?,
+        )?))
 }

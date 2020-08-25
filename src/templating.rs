@@ -36,3 +36,41 @@ pub fn render(
         },
     })
 }
+
+#[derive(Serialize)]
+pub struct MessageContext {
+    title: String,
+    header: String,
+    message: String,
+    user: Option<User>,
+}
+
+/// Render an HTML template.
+pub fn render_message(
+    title: &str,
+    header: &str,
+    message: &str,
+    path: String,
+    user: Option<User>,
+) -> Result<String, ServiceError> {
+    let context = Context::from_serialize(MessageContext {
+        title: title.to_string(),
+        header: header.to_string(),
+        message: message.to_string(),
+        user: user,
+    })
+    .unwrap_or(Context::new());
+    TERA.render("message.html", &context)
+        .map_err(|e| match e.kind {
+            tera::ErrorKind::TemplateNotFound(es) => ServiceError {
+                code: StatusCode::NOT_FOUND,
+                path: path,
+                message: format!("Template not found: {}", es),
+            },
+            ek => ServiceError {
+                code: StatusCode::INTERNAL_SERVER_ERROR,
+                path: path,
+                message: format!("Error rendering template: {:?}", ek),
+            },
+        })
+}
