@@ -4,16 +4,16 @@
 </div>
 <div class="content">
   <form action="/user/delete" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
-    <fieldset class="text-center">
+    <fieldset class="text-center item-center">
       <input type="hidden" name="csrf" value="{{csrf}}">
       <input type="hidden" name="user_id" value="{{user.user_id}}">
       <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
     </fieldset>
-    <fieldset class="pure-group">
+    <fieldset class="pure-group item-center">
       <label for="confirm">To confirm account deletetion type in "DELETE ACCOUNT" below</label>
       <input class="item-center" type="text" name="confirm" id="confirm" placeholder="DELETE ACCOUNT" required>
     </fieldset>
-    <fieldset>
+    <fieldset class="item-center text-center">
       <input type="submit" value="Delete account" class="item-center pure-button button-dark">
     </fieldset>
   </form>

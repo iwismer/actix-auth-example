@@ -8,8 +8,8 @@ I also hope that other people might find it a useful reference when implementing
 ## Todo
 
 - [x] Add a user ID to the user DB
-- [x] Add OTP and backup codes (https://github.com/constantoine/totp-rs)
-- [ ] Show backup codes after OTP, allow regenerating backup codes
+- [x] Add OTP and backup codes
+- [x] Show backup codes after OTP, allow regenerating backup codes
 - [x] password unicode normalization
 - [x] Allow changing password, username, email
 - [x] Validate email
