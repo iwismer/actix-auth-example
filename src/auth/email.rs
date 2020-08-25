@@ -24,7 +24,7 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
         .to(email)
         .from(config::EMAIL_FROM.as_str())
         .subject("Rust Authentication Example: Email Verification.")
-        .text(format!("This email was used to register for the Rust Authentication Example. To verify your email follow this link: {}email?token={}", config::DOMAIN.as_str(), token))
+        .text(format!("This email was used to register for the Rust Authentication Example. To verify your email follow this link: {}email?token={}\nThis link will expire in 24 hours.", config::DOMAIN.as_str(), token))
         .build()
         .unwrap();
 
@@ -75,7 +75,7 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
         .to(email)
         .from(config::EMAIL_FROM.as_str())
         .subject("Rust Authentication Example: Password Reset")
-        .text(format!("The account associated with this email has had a password reset request. Click this link to reset the password: {}password-reset?token={}", config::DOMAIN.as_str(), password_reset_token))
+        .text(format!("The account associated with this email has had a password reset request. Click this link to reset the password: {}password-reset?token={}\nThis link will expire in 24 hours.", config::DOMAIN.as_str(), password_reset_token))
         .build()
         .unwrap();
 

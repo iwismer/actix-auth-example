@@ -78,6 +78,10 @@ async fn main() -> std::io::Result<()> {
                             .route(web::get().to(handlers::user::totp::get_totp_page)),
                     )
                     .service(
+                        web::resource("/validate-email")
+                            .route(web::get().to(handlers::user::email::verify_email_get)),
+                    )
+                    .service(
                         web::resource("/{page}")
                             .guard(actix_web::guard::Get())
                             .route(web::get().to(handlers::user::modify::get_page)),

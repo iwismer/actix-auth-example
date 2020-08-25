@@ -2,6 +2,7 @@
 use crate::auth::{credentials::credential_validator, csrf::check_csrf};
 use crate::db::user::{delete_user, get_user_by_userid};
 use crate::models::ServiceError;
+use crate::templating::render_message;
 
 use actix_web::{http::header, web::Form, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
@@ -48,9 +49,14 @@ pub async fn delete_user_post(
     delete_user(&params.user_id)
         .await
         .map_err(|e| ServiceError::bad_request(&req, e))?;
-    // Redirect back to the users page
-    Ok(HttpResponse::SeeOther()
+
+    Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .header(header::LOCATION, "/")
-        .finish())
+        .body(render_message(
+            "Account Deleted",
+            "Account Deleted Successfully.",
+            "Your account was deleted successfully. We're sorry to see you go.",
+            req.uri().path().to_string(),
+            None,
+        )?))
 }

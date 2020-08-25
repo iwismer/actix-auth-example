@@ -28,6 +28,10 @@
   <br>
   <a class="pure-button pure-button-primary" href="/user/email">Change email</a>
   <br>
+  {% if not user.email_validated%}
+  <a class="pure-button pure-button-primary" href="/user/validate-email">Resend email validation</a>
+  <br>
+  {% endif %}
   <a class="pure-button pure-button-primary" href="/user/2fa">2FA Settings</a>
   <br>
   <a class="pure-button button-danger" href="/user/delete">Delete Account</a>

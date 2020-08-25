@@ -10,9 +10,8 @@ use crate::auth::email::validate_email;
 use crate::auth::session::get_req_user;
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
-use crate::templating::render;
+use crate::templating::{render, render_message};
 
-use actix_web::http::header;
 use actix_web::{web::Form, Error, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
@@ -87,11 +86,19 @@ pub async fn change_password_post(
     modify_user(user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
-    log::debug!("Modified user");
-    Ok(HttpResponse::SeeOther()
+    log::debug!("Modified user password");
+
+    Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .header(header::LOCATION, "/user")
-        .finish())
+        .body(render_message(
+            "Password Changed",
+            "Password Changed Successfully.",
+            "The password for your account was updated successfully. Make sure you update the new password in your password managed.",
+            req.uri().path().to_string(),
+            get_req_user(&req).await.map_err(|e| {
+                ServiceError::general(&req, format!("Error getting request user: {}", e))
+            })?,
+        )?))
 }
 
 /// Struct for holding the form parameters with the new user form
@@ -149,11 +156,19 @@ pub async fn change_username_post(
     modify_user(user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
-    log::debug!("Modified user");
-    Ok(HttpResponse::SeeOther()
+    log::debug!("Modified user username");
+
+    Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .header(header::LOCATION, "/user")
-        .finish())
+        .body(render_message(
+            "Username Changed",
+            "Username Changed Successfully.",
+            "The username for your account was updated successfully. Make sure you update to the new username in your password manager.",
+            req.uri().path().to_string(),
+            get_req_user(&req).await.map_err(|e| {
+                ServiceError::general(&req, format!("Error getting request user: {}", e))
+            })?,
+        )?))
 }
 
 /// Struct for holding the form parameters with the new user form
@@ -206,9 +221,17 @@ pub async fn change_email_post(
     modify_user(user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
-    log::debug!("Modified user");
-    Ok(HttpResponse::SeeOther()
+    log::debug!("Modified user email");
+
+    Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .header(header::LOCATION, "/user")
-        .finish())
+        .body(render_message(
+            "Email Changed",
+            "Email Changed Successfully.",
+            "The email for your account was updated successfully. A verification email has been sent to the new email.",
+            req.uri().path().to_string(),
+            get_req_user(&req).await.map_err(|e| {
+                ServiceError::general(&req, format!("Error getting request user: {}", e))
+            })?,
+        )?))
 }

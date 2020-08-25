@@ -13,7 +13,6 @@ I also hope that other people might find it a useful reference when implementing
 - [x] password unicode normalization
 - [x] Allow changing password, username, email
 - [x] Validate email
-- [ ] User privileges?
 - [ ] OAuth
 - [ ] Add script to automatically setup up mongo
 - [ ] User profile picture
@@ -23,13 +22,18 @@ I also hope that other people might find it a useful reference when implementing
 - [x] Logout button in menu if logged in
 - [x] redirect away from login page if logged in
 - [x] Keep me signed in checkbox (also set session key on each request)
-- [ ] Use client side redirects
-- [ ] Add captcha on registration?
 - [x] Forgotten password
 - [x] Auto retry on insertion of unique fields
 - [x] Generic message page
 - [ ] Time delay lockout to prevent brute force (credentials and TOTP)
 - [ ] Split login tokens from session tokens?
+
+### Maybes
+
+- [ ] Add captcha on registration?
+- [ ] Use client side redirects
+- [ ] User privileges
+
 
 `docker run -it --rm --network=host iwismer/auth-example`
 

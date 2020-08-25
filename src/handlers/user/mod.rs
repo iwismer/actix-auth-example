@@ -6,6 +6,7 @@ use crate::templating::render;
 use actix_web::{Error, HttpRequest, HttpResponse, Result};
 
 pub mod delete;
+pub mod email;
 pub mod modify;
 pub mod register;
 pub mod totp;
