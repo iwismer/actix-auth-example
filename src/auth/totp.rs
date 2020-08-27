@@ -21,17 +21,14 @@ pub async fn generate_totp_token(user_id: &str, persistant: bool) -> Result<Cook
         .await
         {
             Ok(_) => {
-                let mut cookie = Cookie::build("totp", token.to_string())
+                return Ok(Cookie::build("totp", token.to_string())
                     .domain(config::COOKIE_DOMAIN.as_str())
                     .path("/")
                     .secure(*config::PRODUCTION)
                     .http_only(true)
                     .same_site(SameSite::Strict)
-                    .finish();
-                if persistant {
-                    cookie.set_max_age(Duration::days(30));
-                }
-                return Ok(cookie);
+                    .max_age(Duration::minutes(5).num_seconds())
+                    .finish());
             }
             Err(e) => log::warn!(
                 "Problem creating totp token for user {} (attempt {}/10): {}",
@@ -44,11 +41,18 @@ pub async fn generate_totp_token(user_id: &str, persistant: bool) -> Result<Cook
     Err("Unable to generate session token.".to_string())
 }
 
+/// Check that a TOTP value is valid for a user.
+/// If it is not valid, it will also try it as a backup code.
 pub async fn validate_totp(user_id: &str, otp: &str) -> Result<(), String> {
+    // TODO replace user_id with user
+    // TODO do a simple length check
     let now = Utc::now().timestamp() as u64;
     let user = get_user_by_userid(&user_id)
         .await?
         .ok_or(format!("User not found: {}", user_id))?;
+    if !user.totp_active {
+        return Err("User doesn't use 2FA".to_string());
+    }
     let totp = TOTP::new(
         Algorithm::SHA1,
         6,
@@ -64,10 +68,15 @@ pub async fn validate_totp(user_id: &str, otp: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Validate a TOTP backup code, and if it is valid, remove it as it's been used.
 pub async fn validate_totp_backup(user_id: &str, backup_code: &str) -> Result<(), String> {
+    // TODO maybe just get the user as a param?
     let mut user = get_user_by_userid(&user_id)
         .await?
         .ok_or(format!("User not found: {}", user_id))?;
+    if !user.totp_active {
+        return Err("User doesn't use 2FA".to_string());
+    }
     match user
         .totp_backups
         .as_ref()
@@ -79,6 +88,7 @@ pub async fn validate_totp_backup(user_id: &str, backup_code: &str) -> Result<()
             let mut backups = user
                 .totp_backups
                 .ok_or("User doesn't have 2FA backup codes".to_string())?;
+            // Get rid of the code and update the user.
             backups.remove(pos);
             user.totp_backups = Some(backups);
             modify_user(user).await?;
@@ -88,6 +98,7 @@ pub async fn validate_totp_backup(user_id: &str, backup_code: &str) -> Result<()
     }
 }
 
+/// Generate 10 TOTP backup codes.
 pub fn generate_totp_backup_codes() -> Result<Vec<String>, String> {
     let mut backup_codes: Vec<String> = vec![];
     for _ in 0..10 {

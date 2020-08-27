@@ -31,7 +31,7 @@ pub async fn page(req: HttpRequest) -> Result<HttpResponse, Error> {
     )?))
 }
 
-/// Home Page
+/// Home Page when not logged in
 pub async fn home(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "home.html",
@@ -41,7 +41,7 @@ pub async fn home(req: HttpRequest) -> Result<HttpResponse, Error> {
     )?))
 }
 
-/// Home Page
+/// Home Page when logged in
 pub async fn zone(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "zone.html",

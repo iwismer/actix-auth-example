@@ -9,12 +9,14 @@ pub mod middleware;
 pub mod session;
 pub mod totp;
 
+/// Generate a generic 32 byte token, and convert it to a hex string.
 pub fn generate_token() -> Result<String, String> {
     let mut token = [0u8; 32];
     getrandom::getrandom(&mut token).map_err(|e| format!("Error generating token: {}", e))?;
     Ok(hex::encode(token.to_vec()))
 }
 
+/// Hash a token with SHA256.
 pub fn hash_token(token: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(token.as_bytes());

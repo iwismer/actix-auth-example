@@ -1,4 +1,4 @@
-/// Module that contains all the DB functions related to authentication.
+/// Module that contains all the DB functions related to TOTP.
 use super::{get_bson_bool, get_bson_string, totp_token_collection};
 
 use crate::auth::hash_token;
@@ -6,7 +6,7 @@ use crate::auth::hash_token;
 use bson::doc;
 use chrono::{DateTime, Utc};
 
-/// Add a email token to the DB
+/// Add a TOTP token to the DB
 pub async fn add_totp_token(
     user_id: &str,
     token: &str,
@@ -25,7 +25,7 @@ pub async fn add_totp_token(
     Ok(())
 }
 
-/// Verify and delete an totp token
+/// Verify and delete a totp token
 pub async fn verify_totp_token(token: &str) -> Result<(String, bool), String> {
     let hashed_token = hash_token(token);
     let token_doc = totp_token_collection()?
@@ -41,7 +41,7 @@ pub async fn verify_totp_token(token: &str) -> Result<(String, bool), String> {
         .deleted_count
         != 1
     {
-        return Err("Incorrect number of tokens deleted.".to_string());
+        return Err("Incorrect number of tokens deleted. Something weird went wrong.".to_string());
     }
     Ok((
         get_bson_string("user_id", &token_doc)?,
@@ -55,7 +55,7 @@ pub async fn check_totp_token_exists(token: &str) -> Result<(), String> {
         .find_one(doc! { "token": hashed_token.to_string() }, None)
         .await
         .map_err(|e| format!("Problem finding totp token {}: {}", token, e))?
-        .ok_or("Token not found.".to_string())?;
+        .ok_or("TOTP Token not found.".to_string())?;
 
     Ok(())
 }

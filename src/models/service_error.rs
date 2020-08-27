@@ -9,7 +9,6 @@ use log::error;
 use std::fmt;
 
 /// A generic error for the web server.
-// TODO pass the request to the error? That way we can get the user
 #[derive(Debug)]
 pub struct ServiceError {
     pub code: StatusCode,
@@ -17,7 +16,9 @@ pub struct ServiceError {
     pub message: String,
 }
 
+// TODO add a way to specify whether the message should be shown to the user.
 impl ServiceError {
+    /// Shortcut for creating a 401 Unauthorized Error
     pub fn unauthorized<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
         ServiceError {
             code: StatusCode::UNAUTHORIZED,
@@ -26,6 +27,7 @@ impl ServiceError {
         }
     }
 
+    /// Shortcut for creating a 500 General Server Error
     pub fn general<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
         ServiceError {
             code: StatusCode::INTERNAL_SERVER_ERROR,
@@ -34,6 +36,7 @@ impl ServiceError {
         }
     }
 
+    /// Shortcut for creating a 400 Bad Request Error
     pub fn bad_request<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
         ServiceError {
             code: StatusCode::BAD_REQUEST,
@@ -42,6 +45,7 @@ impl ServiceError {
         }
     }
 
+    /// Shortcut for creating a 404 Not Found Error
     pub fn not_found<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
         ServiceError {
             code: StatusCode::NOT_FOUND,
@@ -57,6 +61,7 @@ impl fmt::Display for ServiceError {
     }
 }
 
+// This allows Actix to directly turn the error into a rendered HTML page.
 impl ResponseError for ServiceError {
     fn error_response(&self) -> HttpResponse {
         error!("Path: {} | Message: {}", self.path, self.message);
@@ -72,7 +77,8 @@ impl ResponseError for ServiceError {
             Some(context! {
                 "page" => &url,
                 "code" => &self.code.to_string(),
-                "message" => &match self.path.starts_with("/edit") {
+                // Only show the error if the error is from a `user` page.
+                "message" => &match self.path.starts_with("/user") {
                     true => Some(self.message.to_string()),
                     false => None,
                 }
@@ -81,6 +87,7 @@ impl ResponseError for ServiceError {
         ) {
             Ok(s) => s,
             Err(e) => {
+                // If there is an error when rendering the error, just return a super basic error.
                 error!("Error when rendering error template: {}", e);
                 status_code = StatusCode::INTERNAL_SERVER_ERROR;
                 format!("500 Internal Server Error.")

@@ -29,7 +29,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(
                 middleware::DefaultHeaders::new().header(header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
             )
-            // Removes trailing slash
+            // Removes trailing slash in the URL to make is so I don't need as many services
+            // TODO remove in actix-web 3.0 since it adds a trailing slash
             .wrap_fn(|mut req, srv| {
                 let head = req.head();
                 let mut new_path = head.uri.path().to_string();
@@ -54,9 +55,9 @@ async fn main() -> std::io::Result<()> {
                 }
                 srv.call(req)
             })
-            // Remove duplicate slashes
+            // Remove duplicate slashes in the URL
             .wrap(middleware::NormalizePath::default())
-            // enable logger
+            // enable logging
             .wrap(middleware::Logger::default())
             // Home page
             .service(
@@ -64,11 +65,13 @@ async fn main() -> std::io::Result<()> {
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::home)),
             )
+            // Home page for logged in users
             .service(
                 web::scope("/zone")
                     .wrap(auth::middleware::AuthCheckService::require_auth())
                     .service(web::resource("").route(web::get().to(handlers::zone))),
             )
+            // Pages related to management of a user
             .service(
                 web::scope("/user")
                     .wrap(auth::middleware::AuthCheckService::require_auth())
@@ -116,6 +119,7 @@ async fn main() -> std::io::Result<()> {
                             .route(web::post().to(handlers::user::totp::remove_totp_post)),
                     ),
             )
+            // Login related pages
             .service(
                 web::resource("/login")
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
@@ -146,6 +150,7 @@ async fn main() -> std::io::Result<()> {
                     .route(web::post().to(handlers::user::register::register_post)),
             )
             .service(web::resource("/logout").route(web::get().to(handlers::auth::logout)))
+            // URL for email verification responses
             .service(
                 web::resource("/email").route(web::get().to(handlers::user::email::verify_email)),
             )

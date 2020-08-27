@@ -79,3 +79,15 @@ use authentication
 ## Docs:
 
 <https://stackoverflow.com/questions/549/the-definitive-guide-to-form-based-website-authentication#477579>
+
+## Tokens
+
+Tokens are hashed with SHA256 before being stored in the database. This is to ensure that someone with access to the database can't
+simply impersonate users by using their session tokens, or log in with their TOTP backup codes. Since the codes are sufficiently long
+and random, they don't need to be salted or use a password specific hashing algorithm.
+
+## CSRF
+
+To prevent request forgery this example uses the [Double Submit Cookie](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) method of CSRF prevention. This method was chosen since it requires no client side JS.
+
+All forms that require user authentication use CSRF.

@@ -1,3 +1,4 @@
+/// Module containing the email sending related functions.
 use crate::config;
 use crate::db::email::{add_email_token, add_password_reset_token};
 
@@ -19,6 +20,7 @@ lazy_static! {
     );
 }
 
+/// Send a verification email to the supplied email.
 pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
     let email = EmailBuilder::new()
         .to(email)
@@ -41,6 +43,7 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Send a password reset email.
 pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(), String> {
     let mut password_reset_token = "".to_string();
     let mut error: Option<String> = None;
@@ -59,7 +62,7 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
             }
             Err(e) => {
                 log::warn!(
-                    "Problem creating email token for user {} (attempt {}/10): {}",
+                    "Problem creating password reset token for user {} (attempt {}/10): {}",
                     user_id,
                     i + 1,
                     e
@@ -69,7 +72,7 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
         }
     }
     if let Some(e) = error {
-        return Err(format!("Error generating reset token: {}", e));
+        return Err(format!("Error generating password reset token: {}", e));
     }
     let email = EmailBuilder::new()
         .to(email)
@@ -92,7 +95,9 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
     Ok(())
 }
 
+/// Generate an email token and then send a verification email.
 pub async fn validate_email(user_id: &str, email: &str) -> Result<(), String> {
+    // TODO retry in case of duplicate
     let email_token = super::generate_token()?;
     add_email_token(user_id, email, &email_token, Utc::now() + Duration::days(1)).await?;
     send_verification_email(email, &email_token)?;

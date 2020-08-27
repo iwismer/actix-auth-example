@@ -15,13 +15,17 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
+/// What to do based on whether or not the user is logged in.
 #[derive(Clone)]
 enum AuthRedirectStrategy {
+    /// Require authentication for the page. Returns a 401 error if they are not authenticated.
     RequireAuth,
+    /// Don't allow authenticated users to see this page. Redirect them to the path in the string.
     DisallowAuth(String),
 }
 /// Wrapper for checking that the user is logged in
-/// Checks that there is a valid session cookie sent along with the request
+/// Checks that there is a valid session cookie sent along with the request.
+/// It then does an action based on the strategy
 #[derive(Clone)]
 pub struct AuthCheckService {
     strategy: AuthRedirectStrategy,
@@ -85,6 +89,7 @@ where
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         let mut srv = self.service.clone();
         let strategy = self.strategy.clone();
+        // Run this async so we can use async functions.
         Box::pin(async move {
             let is_logged_in = match get_session_token(&req) {
                 Some(t) => match validate_session(&t).await {

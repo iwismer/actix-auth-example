@@ -49,6 +49,7 @@ pub async fn credential_validator_username(
     }
 }
 
+/// Check that a password meets password requirements
 pub fn validate_password_rules(password: &str, password_confirm: &str) -> Result<(), String> {
     if password.len() < 10 {
         return Err("Password must be at least 10 characters.".to_string());
@@ -62,6 +63,7 @@ pub fn validate_password_rules(password: &str, password_confirm: &str) -> Result
     Ok(())
 }
 
+/// Check that an username meets username requirements
 pub fn validate_username_rules(username: &str) -> Result<(), String> {
     if username.len() == 0 {
         return Err("Username cannot be empty.".to_string());
@@ -72,6 +74,7 @@ pub fn validate_username_rules(username: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Check that an email meets email requirements
 pub fn validate_email_rules(email: &str) -> Result<(), String> {
     let re = Regex::new(
         r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",

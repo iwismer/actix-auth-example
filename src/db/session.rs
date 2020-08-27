@@ -1,4 +1,4 @@
-/// Module that contains all the DB functions related to authentication.
+/// Module that contains all the DB functions related to sessions.
 use super::{get_bson_string, session_collection};
 
 use crate::auth::hash_token;

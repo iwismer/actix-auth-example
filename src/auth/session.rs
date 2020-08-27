@@ -53,7 +53,7 @@ pub fn get_session_token<T: HttpMessage>(req: &T) -> Option<String> {
         .map(|c| c.value().to_string())
 }
 
-// TODO replace with extractor when I figure out how to do async in an extractor
+// TODO replace with extractor when rust allows for async traits
 /// Get the username that sent the request based on the session
 pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, String> {
     let user_id = match get_session_token(req) {

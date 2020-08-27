@@ -13,7 +13,7 @@ use actix_web::web::Form;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
-/// serves the new user page
+/// serves the registration page
 pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "register.html",
@@ -94,7 +94,7 @@ pub async fn register_post(
             }
             Err(e) => {
                 log::warn!(
-                    "Problem creating totp token for user {} (attempt {}/10): {}",
+                    "Problem creating user ID for new user {} (attempt {}/10): {}",
                     user_id,
                     i + 1,
                     e
@@ -106,9 +106,10 @@ pub async fn register_post(
     if let Some(e) = user_error {
         return Err(ServiceError::general(
             &req,
-            format!("Error generating reset token: {}", e),
+            format!("Error generating user ID token: {}", e),
         ));
     }
+    // Send a validation email
     validate_email(&user_id, &params.email)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
@@ -121,7 +122,7 @@ pub async fn register_post(
         .body(render_message(
             "Registration Success",
             "Welcome! You've successfully registered.",
-            &format!("A verification email has been sent to: {}. Follow the link in the message to verify your email.", params.email),
+            &format!("A verification email has been sent to: {}. Follow the link in the message to verify your email. The link will only be valid for 24 hours.", params.email),
             req.uri().path().to_string(),
             Some(user),
         )?))

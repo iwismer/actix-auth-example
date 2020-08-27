@@ -8,7 +8,6 @@
   <form action="/user/2fa-reset" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center item-center">
       <input type="hidden" name="csrf" value="{{csrf}}">
-      <input type="hidden" name="user_id" value="{{user.user_id}}">
       <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
     </fieldset>
     <fieldset class="item-center text-center">
@@ -20,7 +19,6 @@
   <form action="/user/2fa-remove" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center item-center">
       <input type="hidden" name="csrf" value="{{csrf}}">
-      <input type="hidden" name="user_id" value="{{user.user_id}}">
       <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
     </fieldset>
     <fieldset class="item-center text-center">
@@ -34,7 +32,6 @@
   <form action="/user/2fa-add" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
     <fieldset class="text-center item-center">
       <input type="hidden" name="csrf" value="{{csrf}}">
-      <input type="hidden" name="user_id" value="{{user.user_id}}">
       <input class="item-center" type="password" name="current_password" id="current_password" placeholder="Current Password" required>
       <input class="item-center" type="text" name="code" id="code" placeholder="One Time Password" required>
     </fieldset>

@@ -1,4 +1,4 @@
-/// Module that contains all the DB functions related to authentication.
+/// Module that contains all the DB functions related to users.
 use super::{session_collection, users_collection};
 
 use crate::models::User;
@@ -7,7 +7,7 @@ use bson::doc;
 use mongodb::options::UpdateModifications;
 use std::convert::TryFrom;
 
-/// Get a single user from the DB
+/// Get a single user from the DB, searching by username
 pub async fn get_user_by_username(username: &str) -> Result<Option<User>, String> {
     Ok(
         match users_collection()?
@@ -24,7 +24,7 @@ pub async fn get_user_by_username(username: &str) -> Result<Option<User>, String
     )
 }
 
-/// Get user_id from session token
+/// Get a single user from the DB searching by user ID
 pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, String> {
     Ok(
         match users_collection()?
@@ -41,11 +41,6 @@ pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, String> {
     )
 }
 
-/// Get a user's has from the database
-// pub async fn get_user_hash(user: &str) -> Result<Option<String>, String> {
-//     Ok(get_user_username(user).await?.map(|u| u.pass_hash))
-// }
-
 /// Add a user to the DB
 pub async fn add_user(user: User) -> Result<(), String> {
     users_collection()?
@@ -55,7 +50,7 @@ pub async fn add_user(user: User) -> Result<(), String> {
     Ok(())
 }
 
-/// Add a user to the DB
+/// Modify an existing user in the DB
 pub async fn modify_user(user: User) -> Result<(), String> {
     users_collection()?
         .update_one(
@@ -70,6 +65,7 @@ pub async fn modify_user(user: User) -> Result<(), String> {
 
 /// Delete a user from the DB
 pub async fn delete_user(user_id: &str) -> Result<(), String> {
+    // TODO delete all other tokens too!
     // Delete existing sessions
     session_collection()?
         .delete_many(doc! { "user_id": user_id }, None)

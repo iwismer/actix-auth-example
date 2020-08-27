@@ -25,21 +25,21 @@ fn session_collection() -> Result<Collection, String> {
     Ok((*DB_CONN).as_ref()?.collection(&config::SESSION_COLLECTION))
 }
 
-/// Get the collection containing all the session tokens.
+/// Get the collection containing all the email tokens.
 fn email_token_collection() -> Result<Collection, String> {
     Ok((*DB_CONN)
         .as_ref()?
         .collection(&config::EMAIL_TOKEN_COLLECTION))
 }
 
-/// Get the collection containing all the session tokens.
+/// Get the collection containing all the TOTP tokens.
 fn totp_token_collection() -> Result<Collection, String> {
     Ok((*DB_CONN)
         .as_ref()?
         .collection(&config::TOTP_TOKEN_COLLECTION))
 }
 
-/// Get the collection containing all the session tokens.
+/// Get the collection containing all the password reset tokens.
 fn password_reset_token_collection() -> Result<Collection, String> {
     Ok((*DB_CONN)
         .as_ref()?

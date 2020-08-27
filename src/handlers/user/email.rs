@@ -9,7 +9,7 @@ use actix_web::web::Query;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use std::collections::HashMap;
 
-/// Accepts the post request to create a new user
+/// Accepts the request from a user to resend an email verification.
 pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     let user = get_req_user(&req)
         .await
@@ -18,6 +18,7 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
             &req,
             "No user found associated with request.",
         ))?;
+    // Don't send again if they're already verified.
     if user.email_validated {
         return Ok(HttpResponse::Ok()
         .content_type("text/html")
@@ -29,6 +30,7 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
             Some(user),
         )?));
     }
+    // Send the verification email
     validate_email(&user.user_id, &user.email)
         .await
         .map_err(|s| ServiceError::general(&req, s))?;
@@ -39,13 +41,13 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
         .body(render_message(
             "Email Validation",
             "Email Validation Sent Successfully.",
-            "The email associated with your account has had a validation email sent to it.",
+            "The email associated with your account has had a validation email sent to it. The verification link will expire in 24 hours.",
             req.uri().path().to_string(),
             Some(user),
         )?))
 }
 
-/// serves the new user page
+/// Accepts email verification request
 pub async fn verify_email(
     req: HttpRequest,
     query: Query<HashMap<String, String>>,
