@@ -7,6 +7,7 @@ use crate::auth::email::send_password_reset_email;
 use crate::auth::session::get_req_user;
 use crate::auth::session::{generate_session_token, get_session_token};
 use crate::auth::totp::{generate_totp_token, validate_totp};
+use crate::context;
 use crate::db::email::verify_password_reset_token;
 use crate::db::session::delete_session;
 use crate::db::totp::{check_totp_token_exists, verify_totp_token};
@@ -43,14 +44,14 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
         Ok(HttpResponse::Ok().content_type("text/html").body(render(
             "2fa.html",
             req.uri().path().to_string(),
-            None::<i32>,
+            None,
             None,
         )?))
     } else {
         Ok(HttpResponse::Ok().content_type("text/html").body(render(
             "login.html",
             req.uri().path().to_string(),
-            None::<i32>,
+            None,
             get_req_user(&req).await.map_err(|e| {
                 ServiceError::general(&req, format!("Error getting request user: {}", e))
             })?,
@@ -166,7 +167,7 @@ pub async fn forgot_password_get(req: HttpRequest) -> Result<HttpResponse, Error
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "forgot_password.html",
         req.uri().path().to_string(),
-        None::<i32>,
+        None,
         get_req_user(&req).await.map_err(|e| {
             ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,
@@ -216,13 +217,6 @@ pub async fn forgot_password_post(
         )?))
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ResetPasswordContext {
-    username: String,
-    user_id: String,
-    token: String,
-}
-
 /// serves the new user page
 pub async fn password_reset_get(
     req: HttpRequest,
@@ -237,10 +231,10 @@ pub async fn password_reset_get(
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "reset_password.html",
         req.uri().path().to_string(),
-        Some(ResetPasswordContext {
-            username: user.username.to_string(),
-            user_id: user.user_id.to_string(),
-            token: token.to_string(),
+        Some(context! {
+            "username" => &user.username,
+            "user_id" => &user.user_id,
+            "token" => &token
         }),
         None,
     )?))

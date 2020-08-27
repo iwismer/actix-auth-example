@@ -4,15 +4,9 @@ use crate::models::ServiceError;
 use crate::templating::render;
 
 use actix_web::{Error, HttpRequest, HttpResponse, Result};
-use serde::Serialize;
 
 pub mod auth;
 pub mod user;
-
-#[derive(Serialize)]
-struct CSRFContext {
-    csrf: String,
-}
 
 /// 404 handler
 pub async fn p404(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
@@ -30,7 +24,7 @@ pub async fn page(req: HttpRequest) -> Result<HttpResponse, Error> {
             ))?
         ),
         req.uri().path().to_string(),
-        None::<i32>,
+        None,
         get_req_user(&req).await.map_err(|e| {
             ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,
@@ -42,7 +36,7 @@ pub async fn home(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "home.html",
         req.uri().path().to_string(),
-        None::<i32>,
+        None,
         None,
     )?))
 }
@@ -52,7 +46,7 @@ pub async fn zone(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "zone.html",
         req.uri().path().to_string(),
-        None::<i32>,
+        None,
         get_req_user(&req).await.map_err(|e| {
             ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,

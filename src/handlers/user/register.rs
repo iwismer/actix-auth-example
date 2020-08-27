@@ -18,7 +18,7 @@ pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "register.html",
         req.uri().path().to_string(),
-        None::<i32>,
+        None,
         get_req_user(&req).await.map_err(|e| {
             ServiceError::general(&req, format!("Error getting request user: {}", e))
         })?,

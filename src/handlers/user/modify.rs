@@ -1,6 +1,4 @@
 /// Module for endpoints related to adding new users
-use super::super::CSRFContext;
-
 use crate::auth::credentials::{
     credential_validator, generate_password_hash, validate_email_rules, validate_password_rules,
     validate_username_rules,
@@ -8,6 +6,7 @@ use crate::auth::credentials::{
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::email::validate_email;
 use crate::auth::session::get_req_user;
+use crate::context;
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
 use crate::templating::{render, render_message};
@@ -29,7 +28,7 @@ pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
                 ))?
             ),
             req.uri().path().to_string(),
-            Some(CSRFContext { csrf: csrf_token }),
+            Some(context! { "csrf" => &csrf_token }),
             get_req_user(&req).await.map_err(|e| {
                 ServiceError::general(&req, format!("Error getting request user: {}", e))
             })?,

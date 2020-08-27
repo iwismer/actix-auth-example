@@ -1,20 +1,12 @@
 /// Module for the ServiceError struct.
 use crate::config;
+use crate::context;
 use crate::templating::render;
 
 use actix_web::http::{header, StatusCode};
 use actix_web::{HttpRequest, HttpResponse, ResponseError};
 use log::error;
-use serde::Serialize;
 use std::fmt;
-
-/// Context struct for rendering an error to HTML
-#[derive(Debug, Serialize)]
-struct ErrorContext {
-    page: String,
-    code: String,
-    message: Option<String>,
-}
 
 /// A generic error for the web server.
 // TODO pass the request to the error? That way we can get the user
@@ -77,13 +69,13 @@ impl ResponseError for ServiceError {
         let body = match render(
             "error.html",
             self.path.to_string(),
-            Some(ErrorContext {
-                page: url,
-                code: self.code.to_string(),
-                message: match self.path.starts_with("/edit") {
+            Some(context! {
+                "page" => &url,
+                "code" => &self.code.to_string(),
+                "message" => &match self.path.starts_with("/edit") {
                     true => Some(self.message.to_string()),
                     false => None,
-                },
+                }
             }),
             None,
         ) {

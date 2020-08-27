@@ -5,6 +5,7 @@ use crate::auth::generate_token;
 use crate::auth::session::get_req_user;
 use crate::auth::totp::{generate_totp_backup_codes, validate_totp};
 use crate::config;
+use crate::context;
 use crate::db::user::{get_user_by_userid, modify_user};
 use crate::models::ServiceError;
 use crate::templating::render;
@@ -15,13 +16,6 @@ use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use totp_rs::{Algorithm, TOTP};
 
-#[derive(Serialize)]
-pub struct TotpContext {
-    qr_code: String,
-    totp_token: String,
-    csrf: String,
-}
-
 pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
     let csrf_token = generate_csrf_token().map_err(|s| ServiceError::general(&req, s))?;
     let mut user = get_req_user(&req)
@@ -29,10 +23,10 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
         .map_err(|e| ServiceError::general(&req, format!("Error getting request user: {}", e)))?
         .ok_or(ServiceError::general(&req, "No user found in request."))?;
     let ctx = match user.totp_active {
-        true => TotpContext {
-            qr_code: "".to_string(),
-            totp_token: "".to_string(),
-            csrf: csrf_token.to_string(),
+        true => context! {
+            // "qr_code" => "",
+            // "totp_token" => "",
+            "csrf" => &csrf_token
         },
         false => {
             let token = generate_token().map_err(|s| ServiceError::general(&req, s))?;
@@ -46,10 +40,10 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
             modify_user(user.clone())
                 .await
                 .map_err(|s| ServiceError::bad_request(&req, s))?;
-            TotpContext {
-                qr_code: qr_code,
-                totp_token: token,
-                csrf: csrf_token.to_string(),
+            context! {
+                "qr_code" => &qr_code,
+                "totp_token" => &token,
+                "csrf" => &csrf_token
             }
         }
     };
@@ -70,11 +64,6 @@ pub struct AddTotpForm {
     user_id: String,
     code: String,
     csrf: String,
-}
-
-#[derive(Serialize)]
-pub struct TotpBackupContext {
-    totp_backups: Vec<String>,
 }
 
 /// Accepts the post request to create a new user
@@ -119,8 +108,8 @@ pub async fn add_totp_post(
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "user/2fa_backup.html",
         req.uri().path().to_string(),
-        Some(TotpBackupContext {
-            totp_backups: backup_codes,
+        Some(context! {
+            "totp_backups" => &backup_codes
         }),
         Some(user),
     )?))
@@ -209,8 +198,8 @@ pub async fn reset_backup_totp_post(
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "user/2fa_backup.html",
         req.uri().path().to_string(),
-        Some(TotpBackupContext {
-            totp_backups: backup_codes,
+        Some(context! {
+            "totp_backups" => &backup_codes
         }),
         Some(user),
     )?))
