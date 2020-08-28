@@ -91,7 +91,7 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::resource("/delete")
-                            // TODO change to delete using client side JS
+                            // TODO change to delete using client side JS?
                             .route(web::post().to(handlers::user::delete::delete_user_post)),
                     )
                     .service(
