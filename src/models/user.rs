@@ -25,6 +25,8 @@ pub struct User {
     pub totp_token: Option<String>,
     /// The TOTP backup codes (hashed with SHA256)
     pub totp_backups: Option<Vec<String>>,
+    /// The path to the saved profile
+    pub profile_pic: Option<String>,
 }
 
 impl TryFrom<Document> for User {
@@ -53,6 +55,7 @@ impl TryFrom<Document> for User {
                     None
                 }
             },
+            profile_pic: get_bson_string("profile_pic", &item).ok(),
         })
     }
 }
@@ -60,6 +63,10 @@ impl TryFrom<Document> for User {
 impl From<&User> for Document {
     fn from(item: &User) -> Self {
         let totp_token = match item.totp_token.as_ref() {
+            Some(s) => Bson::String(s.to_string()),
+            None => Bson::Null,
+        };
+        let profile_pic = match item.profile_pic.as_ref() {
             Some(s) => Bson::String(s.to_string()),
             None => Bson::Null,
         };
@@ -76,6 +83,7 @@ impl From<&User> for Document {
             "totp_active": item.totp_active,
             "totp_token": totp_token,
             "totp_backups": totp_backups,
+            "profile_pic": profile_pic,
         }
     }
 }

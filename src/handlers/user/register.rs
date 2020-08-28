@@ -85,6 +85,7 @@ pub async fn register_post(
         totp_active: false,
         totp_token: None,
         totp_backups: None,
+        profile_pic: None,
     };
     let mut user_error: Option<String> = None;
     let mut user_id = "".to_string();

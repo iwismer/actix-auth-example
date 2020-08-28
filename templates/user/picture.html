@@ -1,0 +1,19 @@
+{% extends "base.html" %} {% block title %}Change Profile Picture{% endblock %} {% block content %}
+<div class="text-center title">
+  <h1>Change profile picture for {{user.username}}</h1>
+</div>
+<div class="content">
+  <form action="/user/picture" method="post" enctype="application/x-www-form-urlencoded" class="pure-form pure-form-stacked">
+    <fieldset class="text-center item-center">
+      <input type="hidden" name="csrf" value="{{csrf}}">
+    </fieldset>
+    <fieldset class="pure-group item-center">
+      <label for="profile_pic" class="text-center">Profile Picture (Max size 2MB)</label>
+      <input class="item-center" type="file" name="profile_pic" id="profile_pic" required>
+    </fieldset>
+    <fieldset class="item-center text-center">
+      <input type="submit" value="Change Profile Picture" class="item-center pure-button button-dark">
+    </fieldset>
+  </form>
+</div>
+{% endblock %}

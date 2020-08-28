@@ -123,6 +123,10 @@ To prevent request forgery this example uses the [Double Submit Cookie](https://
 
 All forms that require user authentication use CSRF.
 
+## .well-known/security.txt
+
+See <https://securitytxt.org/>
+
 ## Useful Links
 
 <https://stackoverflow.com/questions/549/the-definitive-guide-to-form-based-website-authentication#477579>
