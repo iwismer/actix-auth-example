@@ -97,9 +97,29 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
 
 /// Generate an email token and then send a verification email.
 pub async fn validate_email(user_id: &str, email: &str) -> Result<(), String> {
-    // TODO retry in case of duplicate
-    let email_token = super::generate_token()?;
-    add_email_token(user_id, email, &email_token, Utc::now() + Duration::days(1)).await?;
+    let mut insert_error: Option<String> = None;
+    let mut email_token = "".to_string();
+    for i in 0..10 {
+        email_token = super::generate_token()?;
+        match add_email_token(user_id, email, &email_token, Utc::now() + Duration::days(1)).await {
+            Ok(_) => {
+                insert_error = None;
+                break;
+            }
+            Err(e) => {
+                log::warn!(
+                    "Problem creating email token for new validation {} (attempt {}/10): {}",
+                    email_token,
+                    i + 1,
+                    e
+                );
+                insert_error = Some(e);
+            }
+        }
+    }
+    if let Some(e) = insert_error {
+        return Err(format!("Error generating email verification token: {}", e));
+    }
     send_verification_email(email, &email_token)?;
     Ok(())
 }
