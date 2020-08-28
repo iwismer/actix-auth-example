@@ -39,7 +39,7 @@ lazy_static! {
     /// The name of the TOTP token collection in the DB
     pub static ref TOTP_TOKEN_COLLECTION: String = env::var("TOTP_TOKEN_COLLECTION").unwrap_or("totp".to_string());
     /// The name of the password reset token collection in the DB
-    pub static ref PASSWORD_RESET_TOKEN_COLLECTION: String = env::var("PASSWORD_RESET_TOKEN_COLLECTION").unwrap_or("password-reset".to_string());
+    pub static ref PASSWORD_RESET_TOKEN_COLLECTION: String = env::var("PASSWORD_RESET_TOKEN_COLLECTION").unwrap_or("password_reset".to_string());
 
     // Email Options
     /// The from email to use when sending emails

@@ -10,8 +10,10 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=example
       - MONGO_INITDB_ROOT_PASSWORD=hunter2
+      - MONGO_INITDB_DATABASE=auth-example
     volumes:
       - "dbdata:/data/db"
+      - "init:/docker-entrypoint-initdb.d"
     networks:
       - mongo_network
 

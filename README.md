@@ -79,35 +79,9 @@ docker build -t auth-example .
 
 `cargo build`
 
-## Manually setting up MongoDB
+## Setting up the MongoDB instance
 
-```
-db.createCollection("users", {})
-db.createCollection("sessions", {})
-db.createCollection("emails", {})
-db.createCollection("totp", {})
-db.createCollection("password-reset", {})
-
-db.sessions.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
-db.email.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
-db.totp.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
-db.password-reset.createIndex( { "expiry": 1 }, { expireAfterSeconds: 1 } )
-
-db.sessions.createIndex( { "token": 1 }, { unique: true } )
-db.emails.createIndex( { "token": 1 }, { unique: true } )
-db.totp.createIndex( { "token": 1 }, { unique: true } )
-db.password-reset.createIndex( { "token": 1 }, { unique: true } )
-db.users.createIndex( { "user_id": 1 }, { unique: true } )
-db.users.createIndex( { "username": 1 }, { unique: true } )
-```
-
-## On Server
-
-```
-use admin
-db.auth("", "")
-use authentication
-```
+Run the commands in `init/db-init.js`. These will be automatically run if you're using Docker Compose.
 
 # Documentation
 
