@@ -46,7 +46,7 @@ pub async fn verify_email_token(token: &str) -> Result<(), String> {
         return Err("Invalid Token. Email doesn't match".to_string());
     }
     user.email_validated = true;
-    modify_user(user).await?;
+    modify_user(&user).await?;
     if email_token_collection()?
         .delete_one(doc! { "token": hash_token(token) }, None)
         .await

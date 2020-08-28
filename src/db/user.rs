@@ -42,7 +42,7 @@ pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, String> {
 }
 
 /// Add a user to the DB
-pub async fn add_user(user: User) -> Result<(), String> {
+pub async fn add_user(user: &User) -> Result<(), String> {
     users_collection()?
         .insert_one(user.into(), None)
         .await
@@ -51,7 +51,7 @@ pub async fn add_user(user: User) -> Result<(), String> {
 }
 
 /// Modify an existing user in the DB
-pub async fn modify_user(user: User) -> Result<(), String> {
+pub async fn modify_user(user: &User) -> Result<(), String> {
     users_collection()?
         .update_one(
             doc! { "user_id": &user.user_id },

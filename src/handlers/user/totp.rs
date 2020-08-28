@@ -3,10 +3,10 @@ use crate::auth::credentials::credential_validator;
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::generate_token;
 use crate::auth::session::get_req_user;
-use crate::auth::totp::{generate_totp_backup_codes, validate_totp};
+use crate::auth::totp::{generate_totp_backup_codes, validate_totp_token};
 use crate::config;
 use crate::context;
-use crate::db::user::{get_user_by_userid, modify_user};
+use crate::db::user::modify_user;
 use crate::models::ServiceError;
 use crate::templating::render;
 
@@ -39,7 +39,7 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
                     ServiceError::general(&req, format!("Problem generating QR code: {}", e))
                 })?;
             user.totp_token = Some(token.to_string());
-            modify_user(user.clone())
+            modify_user(&user)
                 .await
                 .map_err(|s| ServiceError::bad_request(&req, s))?;
             context! {
@@ -64,7 +64,6 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
 #[derive(Serialize, Deserialize)]
 pub struct AddTotpForm {
     current_password: String,
-    user_id: String,
     code: String,
     csrf: String,
 }
@@ -76,44 +75,35 @@ pub async fn add_totp_post(
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     // Get the user from the form
-    let mut user = get_user_by_userid(&params.user_id)
-        .await
-        .map_err(|s| ServiceError::general(&req, s))?
-        .ok_or(ServiceError::bad_request(
-            &req,
-            format!("User doesn't exist: {}", params.user_id),
-        ))?;
-    // Get the user from the request
-    let req_user = get_req_user(&req)
+    let mut user = get_req_user(&req)
         .await
         .map_err(|e| ServiceError::general(&req, format!("Error getting request user: {}", e)))?
         .ok_or(ServiceError::general(&req, "No user found in request."))?;
-    if req_user.user_id != user.user_id {
-        return Err(ServiceError::bad_request(
-            &req,
-            "Request user doesn't match form user.",
-        ));
-    }
     // Check the password entered was correct
     if !credential_validator(&user, &params.current_password)
         .map_err(|e| ServiceError::general(&req, e))?
     {
         return Err(ServiceError::bad_request(
             &req,
-            format!("Invalid current password: {}", params.user_id),
+            format!("Invalid current password: {}", &user.user_id),
         ));
     }
+    // Set this before validating since it needs to be true for validation to succeed.
+    user.totp_active = true;
     // Check the TOTP code was correct
-    validate_totp(&user.user_id, &params.code)
+    if !validate_totp_token(&mut user, &params.code)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s))?
+    {
+        return Err(ServiceError::bad_request(&req, "Invalid token."));
+    }
     // update user
     let backup_codes = generate_totp_backup_codes().map_err(|s| {
         ServiceError::general(&req, format!("Problem generating backup codes: {}", s))
     })?;
     user.totp_backups = Some(backup_codes.clone());
     user.totp_active = true;
-    modify_user(user.clone())
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user -> Enable TOTP");
@@ -155,7 +145,7 @@ pub async fn remove_totp_post(
     }
     // update user
     user.totp_active = false;
-    modify_user(user)
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user -> disable TOTP");
@@ -194,7 +184,7 @@ pub async fn reset_backup_totp_post(
         ServiceError::general(&req, format!("Problem generating backup codes: {}", s))
     })?;
     user.totp_backups = Some(backup_codes.clone());
-    modify_user(user.clone())
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user");

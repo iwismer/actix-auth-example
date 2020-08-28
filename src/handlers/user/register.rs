@@ -87,7 +87,7 @@ pub async fn register_post(
     for i in 0..10 {
         user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s))?;
         user.user_id = user_id.to_string();
-        match add_user(user.clone()).await {
+        match add_user(&user).await {
             Ok(_) => {
                 user_error = None;
                 break;

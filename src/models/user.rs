@@ -57,22 +57,21 @@ impl TryFrom<Document> for User {
     }
 }
 
-#[allow(unused_variables)]
-impl From<User> for Document {
-    fn from(item: User) -> Self {
-        let totp_token = match item.totp_token {
-            Some(s) => Bson::String(s),
+impl From<&User> for Document {
+    fn from(item: &User) -> Self {
+        let totp_token = match item.totp_token.as_ref() {
+            Some(s) => Bson::String(s.to_string()),
             None => Bson::Null,
         };
-        let totp_backups = match item.totp_backups {
+        let totp_backups = match item.totp_backups.as_ref() {
             Some(arr) => Bson::Array(arr.iter().map(|s| Bson::String(s.to_string())).collect()),
             None => Bson::Null,
         };
         doc! {
-            "user_id": item.user_id,
-            "email": item.email,
-            "username": item.username,
-            "pass_hash": item.pass_hash,
+            "user_id": item.user_id.to_string(),
+            "email": item.email.to_string(),
+            "username": item.username.to_string(),
+            "pass_hash": item.pass_hash.to_string(),
             "email_validated": item.email_validated,
             "totp_active": item.totp_active,
             "totp_token": totp_token,

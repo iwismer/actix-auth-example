@@ -133,19 +133,20 @@ pub async fn totp_post(
     let (user_id, persist) = verify_totp_token(&totp_token)
         .await
         .map_err(|s| ServiceError::bad_request(&req, format!("Invalid TOTP Token: {}", s)))?;
-    // Check the code is correct, return an error if not
-    validate_totp(&user_id, &params.code).await.map_err(|e| {
-        info!("Invalid TOTP for user {}: {}", user_id, e);
-        ServiceError::unauthorized(&req, "Invalid TOTP.")
-    })?;
 
-    let user = get_user_by_userid(&user_id)
+    let mut user = get_user_by_userid(&user_id)
         .await
         .map_err(|s| ServiceError::general(&req, format!("Error getting user: {}", s)))?
         .ok_or(ServiceError::general(
             &req,
             format!("User not found: {}", &user_id),
         ))?;
+
+    // Check the code is correct, return an error if not
+    validate_totp(&mut user, &params.code).await.map_err(|e| {
+        info!("Invalid TOTP for user {}: {}", user_id, e);
+        ServiceError::unauthorized(&req, "Invalid TOTP.")
+    })?;
 
     let cookie = generate_session_token(&user.user_id, persist)
         .await
@@ -273,7 +274,7 @@ pub async fn password_reset_post(
         generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
     // Update the user
     user.pass_hash = hash;
-    modify_user(user.clone())
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     Ok(HttpResponse::Ok()

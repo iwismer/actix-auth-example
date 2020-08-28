@@ -75,7 +75,7 @@ pub async fn change_password_post(
         generate_password_hash(&params.new_password).map_err(|s| ServiceError::general(&req, s))?;
     // insert user
     user.pass_hash = hash;
-    modify_user(user)
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user password");
@@ -138,7 +138,7 @@ pub async fn change_username_post(
     }
     // update user
     user.username = params.new_username.to_string();
-    modify_user(user)
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user username");
@@ -196,7 +196,7 @@ pub async fn change_email_post(
     // update user
     user.email = params.new_email.to_string();
     user.email_validated = false;
-    modify_user(user)
+    modify_user(&user)
         .await
         .map_err(|s| ServiceError::bad_request(&req, s))?;
     log::debug!("Modified user email");
