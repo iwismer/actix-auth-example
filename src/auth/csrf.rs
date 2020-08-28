@@ -20,13 +20,18 @@ pub async fn check_csrf<T: Into<String>>(
         .ok_or(ServiceError::bad_request(
             &req,
             "No CSRF token found in form.",
+            true,
         ))?
         .into();
     // Get the CSRF cookie from the request
     match req
         .cookies()
         .map_err(|e| {
-            ServiceError::general(&req, &format!("Error getting cookies from request: {}", e))
+            ServiceError::general(
+                &req,
+                &format!("Error getting cookies from request: {}", e),
+                false,
+            )
         })?
         .iter()
         .find(|c| c.name() == "csrf")
@@ -34,9 +39,17 @@ pub async fn check_csrf<T: Into<String>>(
     {
         Some(cookie) => match cookie == form_csrf_unwrapped {
             true => Ok(()),
-            false => Err(ServiceError::unauthorized(&req, "CSRF tokens don't match.")),
+            false => Err(ServiceError::unauthorized(
+                &req,
+                "CSRF tokens don't match.",
+                true,
+            )),
         },
-        None => Err(ServiceError::unauthorized(&req, "No CSRF cookies found.")),
+        None => Err(ServiceError::unauthorized(
+            &req,
+            "No CSRF cookies found.",
+            true,
+        )),
     }
 }
 

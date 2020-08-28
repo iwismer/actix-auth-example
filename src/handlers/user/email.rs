@@ -13,10 +13,13 @@ use std::collections::HashMap;
 pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
     let user = get_req_user(&req)
         .await
-        .map_err(|e| ServiceError::general(&req, format!("Error getting request user: {}", e)))?
+        .map_err(|e| {
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
+        })?
         .ok_or(ServiceError::bad_request(
             &req,
             "No user found associated with request.",
+            false,
         ))?;
     // Don't send again if they're already verified.
     if user.email_validated {
@@ -33,7 +36,7 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
     // Send the verification email
     validate_email(&user.user_id, &user.email)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     log::debug!("Sent validation email");
 
     Ok(HttpResponse::Ok()
@@ -52,12 +55,14 @@ pub async fn verify_email(
     req: HttpRequest,
     query: Query<HashMap<String, String>>,
 ) -> Result<HttpResponse, ServiceError> {
-    let token = query
-        .get("token")
-        .ok_or(ServiceError::bad_request(&req, "Missing token in request."))?;
+    let token = query.get("token").ok_or(ServiceError::bad_request(
+        &req,
+        "Missing token in request.",
+        true,
+    ))?;
     verify_email_token(&token)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(render_message(
@@ -66,7 +71,7 @@ pub async fn verify_email(
             "You can now close this tab.",
             req.uri().path().to_string(),
             get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e))
+                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
             })?,
         )?))
 }

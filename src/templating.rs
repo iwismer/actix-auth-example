@@ -38,11 +38,13 @@ pub fn render(
             code: StatusCode::NOT_FOUND,
             path: path,
             message: format!("Template not found: {}", es),
+            show_message: false,
         },
         ek => ServiceError {
             code: StatusCode::INTERNAL_SERVER_ERROR,
             path: path,
             message: format!("Error rendering template: {:?}", ek),
+            show_message: false,
         },
     })
 }

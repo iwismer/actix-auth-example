@@ -23,24 +23,35 @@ pub async fn delete_user_post(
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     if params.confirm != "DELETE ACCOUNT" {
-        return Err(ServiceError::bad_request(&req, "Confirm string incorrect"));
+        return Err(ServiceError::bad_request(
+            &req,
+            "Confirm deletion string incorrect",
+            true,
+        ));
     }
     let user = get_req_user(&req)
         .await
-        .map_err(|e| ServiceError::general(&req, format!("Error getting request user: {}", e)))?
-        .ok_or(ServiceError::general(&req, "No user found in request."))?;
+        .map_err(|e| {
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
+        })?
+        .ok_or(ServiceError::general(
+            &req,
+            "No user found in request.",
+            false,
+        ))?;
     if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e))?
+        .map_err(|e| ServiceError::general(&req, e, true))?
     {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
+            true,
         ));
     }
     // delete user from the DB
     delete_user(&user.user_id)
         .await
-        .map_err(|e| ServiceError::bad_request(&req, e))?;
+        .map_err(|e| ServiceError::general(&req, e, false))?;
 
     Ok(HttpResponse::Ok()
         .content_type("text/html")

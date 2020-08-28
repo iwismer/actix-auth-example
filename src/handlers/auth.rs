@@ -26,7 +26,7 @@ use std::collections::HashMap;
 pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
     let show_totp = match req
         .cookies()
-        .map_err(|_| ServiceError::bad_request(&req, "Can't find request cookies."))?
+        .map_err(|_| ServiceError::bad_request(&req, "Can't find request cookies.", false))?
         .iter()
         .find(|c| c.name() == "totp")
     {
@@ -46,7 +46,7 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
             req.uri().path().to_string(),
             None,
             get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e))
+                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
             })?,
         )?))
     }
@@ -67,15 +67,15 @@ pub async fn login_post(
 ) -> Result<HttpResponse, ServiceError> {
     // Check the username is valid
     if let Err(e) = validate_username_rules(&params.username) {
-        return Err(ServiceError::bad_request(&req, e));
+        return Err(ServiceError::bad_request(&req, e, true));
     }
     // Check the password is valid
     if let Err(e) = validate_password_rules(&params.password, &params.password) {
-        return Err(ServiceError::bad_request(&req, e));
+        return Err(ServiceError::bad_request(&req, e, true));
     }
     match credential_validator_username(&params.username, &params.password)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?
+        .map_err(|s| ServiceError::general(&req, s, false))?
     {
         Some(user) => match user.totp_active {
             true => {
@@ -84,7 +84,11 @@ pub async fn login_post(
                     generate_totp_token(&user.user_id, params.persist.unwrap_or(false))
                         .await
                         .map_err(|s| {
-                            ServiceError::general(&req, format!("Error adding TOTP Token: {}", s))
+                            ServiceError::general(
+                                &req,
+                                format!("Error adding TOTP Token: {}", s),
+                                false,
+                            )
                         })?;
                 Ok(HttpResponse::SeeOther()
                     .header(header::LOCATION, "/login")
@@ -94,7 +98,7 @@ pub async fn login_post(
             false => {
                 let cookie = generate_session_token(&user.user_id, params.persist.unwrap_or(false))
                     .await
-                    .map_err(|s| ServiceError::general(&req, s))?;
+                    .map_err(|s| ServiceError::general(&req, s, false))?;
 
                 info!("Successfully logged in user: {}", params.username);
                 Ok(HttpResponse::SeeOther()
@@ -105,7 +109,11 @@ pub async fn login_post(
         },
         None => {
             info!("Invalid user: {}", &params.username);
-            Err(ServiceError::unauthorized(&req, "Invalid credentials."))
+            Err(ServiceError::unauthorized(
+                &req,
+                "Invalid credentials.",
+                true,
+            ))
         }
     }
 }
@@ -123,34 +131,39 @@ pub async fn totp_post(
 ) -> Result<HttpResponse, ServiceError> {
     let totp_token = req
         .cookies()
-        .map_err(|_| ServiceError::bad_request(&req, "Can't find request cookies."))?
+        .map_err(|_| ServiceError::bad_request(&req, "Can't find request cookies.", false))?
         .iter()
         .find(|c| c.name() == "totp")
-        .ok_or(ServiceError::bad_request(&req, "Missing TOTP Cookie."))?
+        .ok_or(ServiceError::bad_request(
+            &req,
+            "Missing TOTP Cookie.",
+            true,
+        ))?
         .value()
         .to_string();
     // Check that it is a valid TOTP token, and get the user_ID and persist value
     let (user_id, persist) = verify_totp_token(&totp_token)
         .await
-        .map_err(|s| ServiceError::bad_request(&req, format!("Invalid TOTP Token: {}", s)))?;
+        .map_err(|s| ServiceError::bad_request(&req, format!("Invalid TOTP Token: {}", s), true))?;
 
     let mut user = get_user_by_userid(&user_id)
         .await
-        .map_err(|s| ServiceError::general(&req, format!("Error getting user: {}", s)))?
+        .map_err(|s| ServiceError::general(&req, format!("Error getting user: {}", s), false))?
         .ok_or(ServiceError::general(
             &req,
             format!("User not found: {}", &user_id),
+            false,
         ))?;
 
     // Check the code is correct, return an error if not
     validate_totp(&mut user, &params.code).await.map_err(|e| {
         info!("Invalid TOTP for user {}: {}", user_id, e);
-        ServiceError::unauthorized(&req, "Invalid TOTP.")
+        ServiceError::unauthorized(&req, "Invalid TOTP.", true)
     })?;
 
     let cookie = generate_session_token(&user.user_id, persist)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     info!("Successfully logged in user: {}", user.username);
     Ok(HttpResponse::SeeOther()
         .header(header::LOCATION, "/zone")
@@ -166,7 +179,7 @@ pub async fn forgot_password_get(req: HttpRequest) -> Result<HttpResponse, Error
         req.uri().path().to_string(),
         None,
         get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e))
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
         })?,
     )?))
 }
@@ -185,21 +198,21 @@ pub async fn forgot_password_post(
 ) -> Result<HttpResponse, ServiceError> {
     // Check the username is valid
     if let Err(e) = validate_username_rules(&params.username) {
-        return Err(ServiceError::bad_request(&req, e));
+        return Err(ServiceError::bad_request(&req, e, true));
     }
     // Check the password is valid
     if let Err(e) = validate_email_rules(&params.email) {
-        return Err(ServiceError::bad_request(&req, e));
+        return Err(ServiceError::bad_request(&req, e, true));
     }
     match get_user_by_username(&params.username)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?
+        .map_err(|s| ServiceError::general(&req, s, false))?
     {
         Some(user) => {
             if user.email_validated && user.email == params.email {
                 send_password_reset_email(&user.user_id, &user.email)
                     .await
-                    .map_err(|s| ServiceError::general(&req, s))?;
+                    .map_err(|s| ServiceError::general(&req, s, false))?;
             }
         }
         None => {}
@@ -222,13 +235,15 @@ pub async fn password_reset_get(
     req: HttpRequest,
     query: Query<HashMap<String, String>>,
 ) -> Result<HttpResponse, ServiceError> {
-    let token = query
-        .get("token")
-        .ok_or(ServiceError::bad_request(&req, "Missing token in request."))?;
+    let token = query.get("token").ok_or(ServiceError::bad_request(
+        &req,
+        "Missing token in request.",
+        true,
+    ))?;
     // TODO give a better error message
     let user = verify_password_reset_token(&token, false)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "reset_password.html",
         req.uri().path().to_string(),
@@ -257,26 +272,27 @@ pub async fn password_reset_post(
 ) -> Result<HttpResponse, ServiceError> {
     let mut user = verify_password_reset_token(&params.token, true)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     // Check the new password is valid
     if let Err(e) = validate_password_rules(&params.password, &params.password_confirm) {
-        return Err(ServiceError::bad_request(
-            &req,
-            format!("Error resetting password: {}", e),
-        ));
+        return Err(ServiceError::bad_request(&req, e, true));
     }
     // check user matches the one from the token
     if user.user_id != params.user_id {
-        return Err(ServiceError::bad_request(&req, "User/token mismatch."));
+        return Err(ServiceError::bad_request(
+            &req,
+            "User/token mismatch.",
+            true,
+        ));
     }
     // create password hash
-    let hash =
-        generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
+    let hash = generate_password_hash(&params.password)
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     // Update the user
     user.pass_hash = hash;
     modify_user(&user)
         .await
-        .map_err(|s| ServiceError::bad_request(&req, s))?;
+        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(render_message(
@@ -295,7 +311,7 @@ pub async fn logout(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
         Some(t) => {
             delete_session(&t)
                 .await
-                .map_err(|s| ServiceError::general(&req, s))?;
+                .map_err(|s| ServiceError::general(&req, s, false))?;
             info!("Successfully logged out user");
         }
         None => {

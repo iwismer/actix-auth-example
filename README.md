@@ -27,6 +27,12 @@ I also hope that other people might find it a useful reference when implementing
 - [x] Generic message page
 - [ ] Time delay lockout to prevent brute force (credentials and TOTP)
 - [ ] Split login tokens from session tokens?
+- [ ] Differentiate between input and server errors on backend functions
+- [ ] Structured logging/add more info to logs
+  - User ID
+- [ ] User extractor (Async trait)
+- [ ] Add error creating macros
+- [ ] Simplify error handling on result(option()) functions
 
 ### Maybes
 

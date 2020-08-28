@@ -14,43 +14,47 @@ pub struct ServiceError {
     pub code: StatusCode,
     pub path: String,
     pub message: String,
+    pub show_message: bool,
 }
 
-// TODO add a way to specify whether the message should be shown to the user.
 impl ServiceError {
     /// Shortcut for creating a 401 Unauthorized Error
-    pub fn unauthorized<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
+    pub fn unauthorized<T: Into<String>>(req: &HttpRequest, message: T, show: bool) -> Self {
         ServiceError {
             code: StatusCode::UNAUTHORIZED,
             path: req.uri().path().to_string(),
             message: message.into(),
+            show_message: show,
         }
     }
 
     /// Shortcut for creating a 500 General Server Error
-    pub fn general<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
+    pub fn general<T: Into<String>>(req: &HttpRequest, message: T, show: bool) -> Self {
         ServiceError {
             code: StatusCode::INTERNAL_SERVER_ERROR,
             path: req.uri().path().to_string(),
             message: message.into(),
+            show_message: show,
         }
     }
 
     /// Shortcut for creating a 400 Bad Request Error
-    pub fn bad_request<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
+    pub fn bad_request<T: Into<String>>(req: &HttpRequest, message: T, show: bool) -> Self {
         ServiceError {
             code: StatusCode::BAD_REQUEST,
             path: req.uri().path().to_string(),
             message: message.into(),
+            show_message: show,
         }
     }
 
     /// Shortcut for creating a 404 Not Found Error
-    pub fn not_found<T: Into<String>>(req: &HttpRequest, message: T) -> Self {
+    pub fn not_found<T: Into<String>>(req: &HttpRequest, message: T, show: bool) -> Self {
         ServiceError {
             code: StatusCode::NOT_FOUND,
             path: req.uri().path().to_string(),
             message: message.into(),
+            show_message: show,
         }
     }
 }
@@ -78,7 +82,7 @@ impl ResponseError for ServiceError {
                 "page" => &url,
                 "code" => &self.code.to_string(),
                 // Only show the error if the error is from a `user` page.
-                "message" => &match self.path.starts_with("/user") {
+                "message" => &match self.show_message {
                     true => Some(self.message.to_string()),
                     false => None,
                 }

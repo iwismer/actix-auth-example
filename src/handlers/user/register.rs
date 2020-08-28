@@ -20,7 +20,7 @@ pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError
         req.uri().path().to_string(),
         None,
         get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e))
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
         })?,
     )?))
 }
@@ -43,34 +43,38 @@ pub async fn register_post(
         return Err(ServiceError::bad_request(
             &req,
             format!("Error creating user: {}", e),
+            true,
         ));
     }
     if let Err(e) = validate_username_rules(&params.username) {
         return Err(ServiceError::bad_request(
             &req,
             format!("Error creating user: {}", e),
+            true,
         ));
     }
     if let Err(e) = validate_email_rules(&params.email) {
         return Err(ServiceError::bad_request(
             &req,
             format!("Error creating user: {}", e),
+            true,
         ));
     }
     // check user doesn't already exist
     if get_user_by_username(&params.username)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?
+        .map_err(|s| ServiceError::general(&req, s, false))?
         .is_some()
     {
         return Err(ServiceError::bad_request(
             &req,
             &format!("Creating user: user already exists: {}", params.username),
+            true,
         ));
     }
     // create password hash
-    let hash =
-        generate_password_hash(&params.password).map_err(|s| ServiceError::general(&req, s))?;
+    let hash = generate_password_hash(&params.password)
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     // insert user
     let mut user = User {
         user_id: "".to_string(),
@@ -85,7 +89,7 @@ pub async fn register_post(
     let mut user_error: Option<String> = None;
     let mut user_id = "".to_string();
     for i in 0..10 {
-        user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s))?;
+        user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s, false))?;
         user.user_id = user_id.to_string();
         match add_user(&user).await {
             Ok(_) => {
@@ -107,15 +111,16 @@ pub async fn register_post(
         return Err(ServiceError::general(
             &req,
             format!("Error generating user ID token: {}", e),
+            false,
         ));
     }
     // Send a validation email
     validate_email(&user_id, &params.email)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     let cookie = generate_session_token(&user_id, false)
         .await
-        .map_err(|s| ServiceError::general(&req, s))?;
+        .map_err(|s| ServiceError::general(&req, s, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .cookie(cookie)
