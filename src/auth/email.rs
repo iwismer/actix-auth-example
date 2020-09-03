@@ -1,6 +1,8 @@
 /// Module containing the email sending related functions.
 use crate::config;
 use crate::db::email::{add_email_token, add_password_reset_token};
+use crate::err_server;
+use crate::models::ServerError;
 
 use chrono::{Duration, Utc};
 use lazy_static::lazy_static;
@@ -21,7 +23,7 @@ lazy_static! {
 }
 
 /// Send a verification email to the supplied email.
-pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
+pub fn send_verification_email(email: &str, token: &str) -> Result<(), ServerError> {
     let email = EmailBuilder::new()
         .to(email)
         .from(config::EMAIL_FROM.as_str())
@@ -32,7 +34,7 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
 
     let result = MAILER
         .lock()
-        .map_err(|e| format!("Error unlocking mailer: {}", e))?
+        .map_err(|e| err_server!("Error unlocking mailer: {}", e))?
         .send(email.into());
 
     if result.is_ok() {
@@ -44,9 +46,9 @@ pub fn send_verification_email(email: &str, token: &str) -> Result<(), String> {
 }
 
 /// Send a password reset email.
-pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(), String> {
+pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(), ServerError> {
     let mut password_reset_token = "".to_string();
-    let mut error: Option<String> = None;
+    let mut error: Option<ServerError> = None;
     for i in 0..10 {
         password_reset_token = super::generate_token()?;
         match add_password_reset_token(
@@ -72,7 +74,7 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
         }
     }
     if let Some(e) = error {
-        return Err(format!("Error generating password reset token: {}", e));
+        return Err(err_server!("Error generating password reset token: {}", e));
     }
     let email = EmailBuilder::new()
         .to(email)
@@ -84,7 +86,7 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
 
     let result = MAILER
         .lock()
-        .map_err(|e| format!("Error unlocking mailer: {}", e))?
+        .map_err(|e| err_server!("Error unlocking mailer: {}", e))?
         .send(email.into());
 
     if result.is_ok() {
@@ -96,8 +98,8 @@ pub async fn send_password_reset_email(user_id: &str, email: &str) -> Result<(),
 }
 
 /// Generate an email token and then send a verification email.
-pub async fn validate_email(user_id: &str, email: &str) -> Result<(), String> {
-    let mut insert_error: Option<String> = None;
+pub async fn validate_email(user_id: &str, email: &str) -> Result<(), ServerError> {
+    let mut insert_error: Option<ServerError> = None;
     let mut email_token = "".to_string();
     for i in 0..10 {
         email_token = super::generate_token()?;
@@ -118,7 +120,10 @@ pub async fn validate_email(user_id: &str, email: &str) -> Result<(), String> {
         }
     }
     if let Some(e) = insert_error {
-        return Err(format!("Error generating email verification token: {}", e));
+        return Err(err_server!(
+            "Error generating email verification token: {}",
+            e
+        ));
     }
     send_verification_email(email, &email_token)?;
     Ok(())

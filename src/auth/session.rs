@@ -2,6 +2,8 @@
 use crate::config;
 use crate::db::session::{add_session, get_session_user_id};
 use crate::db::user::get_user_by_userid;
+use crate::err_server;
+use crate::models::ServerError;
 use crate::models::User;
 
 use actix_http::cookie::{Cookie, SameSite};
@@ -10,7 +12,10 @@ use chrono::{Duration, Utc};
 use log::warn;
 
 /// Create a session token for a specific user
-pub async fn generate_session_token(user: &str, persistant: bool) -> Result<Cookie<'_>, String> {
+pub async fn generate_session_token(
+    user: &str,
+    persistant: bool,
+) -> Result<Cookie<'_>, ServerError> {
     let expiry = match persistant {
         false => Utc::now() + Duration::days(1),
         true => Utc::now() + Duration::days(30),
@@ -41,7 +46,7 @@ pub async fn generate_session_token(user: &str, persistant: bool) -> Result<Cook
             ),
         }
     }
-    Err("Unable to generate session token.".to_string())
+    Err(err_server!("Unable to generate session token."))
 }
 
 /// Extract the session token from the request cookies
@@ -55,7 +60,7 @@ pub fn get_session_token<T: HttpMessage>(req: &T) -> Option<String> {
 
 // TODO replace with extractor when rust allows for async traits
 /// Get the username that sent the request based on the session
-pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, String> {
+pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, ServerError> {
     let user_id = match get_session_token(req) {
         Some(token) => match get_session_user_id(&token).await? {
             Some(u) => u,

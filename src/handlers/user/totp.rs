@@ -18,12 +18,10 @@ use totp_rs::{Algorithm, TOTP};
 
 /// Handler for the page to modify TOTP
 pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let csrf_token = generate_csrf_token().map_err(|s| ServiceError::general(&req, s, false))?;
+    let csrf_token = generate_csrf_token().map_err(|s| s.general(&req))?;
     let mut user = get_req_user(&req)
         .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
+        .map_err(|e| e.general(&req))?
         .ok_or(ServiceError::general(
             &req,
             "No user found in request.",
@@ -37,7 +35,8 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
             "csrf" => &csrf_token
         },
         false => {
-            let token = generate_token().map_err(|s| ServiceError::general(&req, s, false))?;
+            let token =
+                generate_token().map_err(|s| ServiceError::general(&req, s.message, false))?;
             let totp = TOTP::new(Algorithm::SHA1, 6, 1, 30, &token);
             let qr_code = totp
                 .get_qr(&user.username, config::DOMAIN.as_str())
@@ -45,9 +44,7 @@ pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
                     ServiceError::general(&req, format!("Problem generating QR code: {}", e), false)
                 })?;
             user.totp_token = Some(token.to_string());
-            modify_user(&user)
-                .await
-                .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+            modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
             context! {
                 "qr_code" => &qr_code,
                 "totp_token" => &token,
@@ -83,18 +80,14 @@ pub async fn add_totp_post(
     // Get the user from the form
     let mut user = get_req_user(&req)
         .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
+        .map_err(|e| e.general(&req))?
         .ok_or(ServiceError::general(
             &req,
             "No user found in request.",
             false,
         ))?;
     // Check the password entered was correct
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", &user.user_id),
@@ -106,7 +99,7 @@ pub async fn add_totp_post(
     // Check the TOTP code was correct
     if !validate_totp_token(&mut user, &params.code)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?
+        .map_err(|s| s.general(&req))?
     {
         return Err(ServiceError::bad_request(&req, "Invalid token.", true));
     }
@@ -120,9 +113,7 @@ pub async fn add_totp_post(
     })?;
     user.totp_backups = Some(backup_codes.clone());
     user.totp_active = true;
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user -> Enable TOTP");
     // Show the backup codes
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
@@ -158,9 +149,7 @@ pub async fn remove_totp_post(
             "No user found in request.",
             false,
         ))?;
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
@@ -169,9 +158,7 @@ pub async fn remove_totp_post(
     }
     // update user
     user.totp_active = false;
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user -> disable TOTP");
     Ok(HttpResponse::SeeOther()
         .content_type("text/html")
@@ -202,9 +189,7 @@ pub async fn reset_backup_totp_post(
             true,
         ));
     }
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
@@ -220,9 +205,7 @@ pub async fn reset_backup_totp_post(
         )
     })?;
     user.totp_backups = Some(backup_codes.clone());
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user");
     Ok(HttpResponse::Ok().content_type("text/html").body(render(
         "user/2fa_backup.html",

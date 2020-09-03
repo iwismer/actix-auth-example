@@ -39,9 +39,7 @@ pub async fn delete_user_post(
             "No user found in request.",
             false,
         ))?;
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, true))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
@@ -51,7 +49,7 @@ pub async fn delete_user_post(
     // delete user from the DB
     delete_user(&user.user_id)
         .await
-        .map_err(|e| ServiceError::general(&req, e, false))?;
+        .map_err(|e| e.general(&req))?;
 
     Ok(HttpResponse::Ok()
         .content_type("text/html")

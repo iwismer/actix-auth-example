@@ -15,7 +15,7 @@ mod templating;
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    std::env::set_var("RUST_LOG", "actix_web=info,auth-example=info");
+    std::env::set_var("RUST_LOG", "info");
 
     info!(
         "Starting http server: {}:{}",

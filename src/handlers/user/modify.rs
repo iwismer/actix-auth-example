@@ -16,7 +16,8 @@ use serde::{Deserialize, Serialize};
 
 /// Generic get page for the modification pages.
 pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let csrf_token = generate_csrf_token().map_err(|s| ServiceError::general(&req, s, false))?;
+    let csrf_token =
+        generate_csrf_token().map_err(|s| ServiceError::general(&req, s.message, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .cookie(csrf_cookie(&csrf_token))
@@ -70,9 +71,7 @@ pub async fn change_password_post(
             "No user found in request.",
             false,
         ))?;
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             "Invalid current password",
@@ -80,13 +79,10 @@ pub async fn change_password_post(
         ));
     }
     // create password hash
-    let hash = generate_password_hash(&params.new_password)
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+    let hash = generate_password_hash(&params.new_password).map_err(|s| s.general(&req))?;
     // insert user
     user.pass_hash = hash;
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user password");
 
     Ok(HttpResponse::Ok()
@@ -126,7 +122,7 @@ pub async fn change_username_post(
     // Check that the username is not in use. This is also checked by the DB.
     if get_user_by_username(&params.new_username)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?
+        .map_err(|s| s.general(&req))?
         .is_some()
     {
         return Err(ServiceError::bad_request(
@@ -137,17 +133,13 @@ pub async fn change_username_post(
     }
     let mut user = get_req_user(&req)
         .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
+        .map_err(|e| e.general(&req))?
         .ok_or(ServiceError::general(
             &req,
             "No user found in request.",
             false,
         ))?;
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
@@ -156,9 +148,7 @@ pub async fn change_username_post(
     }
     // update user
     user.username = params.new_username.to_string();
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user username");
 
     Ok(HttpResponse::Ok()
@@ -206,9 +196,7 @@ pub async fn change_email_post(
             "No user found in request.",
             false,
         ))?;
-    if !credential_validator(&user, &params.current_password)
-        .map_err(|e| ServiceError::general(&req, e, false))?
-    {
+    if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
             format!("Invalid current password: {}", user.user_id),
@@ -218,13 +206,11 @@ pub async fn change_email_post(
     // Send a validation email
     validate_email(&user.user_id, &params.new_email)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+        .map_err(|s| s.general(&req))?;
     // update user
     user.email = params.new_email.to_string();
     user.email_validated = false;
-    modify_user(&user)
-        .await
-        .map_err(|s| ServiceError::bad_request(&req, s, false))?;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user email");
 
     Ok(HttpResponse::Ok()
@@ -235,7 +221,7 @@ pub async fn change_email_post(
             "The email for your account was updated successfully. A verification email has been sent to the new email.",
             req.uri().path().to_string(),
             get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
+                e.general(&req)
             })?,
         )?))
 }

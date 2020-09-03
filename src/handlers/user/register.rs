@@ -6,7 +6,7 @@ use crate::auth::credentials::{
 use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
 use crate::db::user::{add_user, get_user_by_username};
-use crate::models::{ServiceError, User};
+use crate::models::{ServerError, ServiceError, User};
 use crate::templating::{render, render_message};
 
 use actix_web::web::Form;
@@ -63,7 +63,7 @@ pub async fn register_post(
     // check user doesn't already exist
     if get_user_by_username(&params.username)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?
+        .map_err(|s| s.general(&req))?
         .is_some()
     {
         return Err(ServiceError::bad_request(
@@ -73,8 +73,7 @@ pub async fn register_post(
         ));
     }
     // create password hash
-    let hash = generate_password_hash(&params.password)
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+    let hash = generate_password_hash(&params.password).map_err(|s| s.general(&req))?;
     // insert user
     let mut user = User {
         user_id: "".to_string(),
@@ -87,10 +86,10 @@ pub async fn register_post(
         totp_backups: None,
         profile_pic: None,
     };
-    let mut user_error: Option<String> = None;
+    let mut user_error: Option<ServerError> = None;
     let mut user_id = "".to_string();
     for i in 0..10 {
-        user_id = generate_user_id().map_err(|s| ServiceError::general(&req, s, false))?;
+        user_id = generate_user_id().map_err(|s| s.general(&req))?;
         user.user_id = user_id.to_string();
         match add_user(&user).await {
             Ok(_) => {
@@ -118,10 +117,10 @@ pub async fn register_post(
     // Send a validation email
     validate_email(&user_id, &params.email)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+        .map_err(|s| s.general(&req))?;
     let cookie = generate_session_token(&user_id, false)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+        .map_err(|s| ServiceError::general(&req, s.message, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .cookie(cookie)

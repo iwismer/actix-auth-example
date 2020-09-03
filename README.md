@@ -5,6 +5,22 @@
 I made this project to learn a bit more about modern authentication on the web, and to practise my skills with Rust.
 I also hope that other people might find it a useful reference when implementing authentication (once this is complete).
 
+## What is here
+
+- Username/password authentication
+  - Unicode normalization of password
+  - Argon2 for hashing
+- user modification
+  - Email
+  - Username
+  - Password
+  - Profile picture (in progress)
+- TOTP
+- Email validation
+- Email based password reset
+- Session management with cookies
+- JS free CSRF
+
 ## Contributing
 
 I'm not a good designer, so the front end is pretty sparse and boring. If you're into that sort of thing, I love for it to look nice.
@@ -26,7 +42,7 @@ The documentation is also important. If you have any improvements just for the R
 - [x] Allow changing password, username, email
 - [x] Validate email
 - [ ] OAuth
-- [ ] Add script to automatically setup up mongo
+- [X] Add script to automatically setup up mongo
 - [ ] User profile picture
   - Resize on upload
   - Put them in the DB
@@ -40,11 +56,11 @@ The documentation is also important. If you have any improvements just for the R
 - [ ] Time delay lockout to prevent brute force (credentials and TOTP)
 - [ ] Improve logging and error handling
   - [ ] Different log and user facing messages
-  - [ ] Choose whether or not to show error message
+  - [x] Choose whether or not to show error message
   - [ ] Add more details to logs, like user ID
   - [ ] look into structured logging
-  - [ ] Add error creation macros
-  - [ ] Log error before passing up the chain
+  - [x] Add error creation macros
+  - [x] Log error before passing up the chain
   - [ ] Simplify error handling on result(option()) functions
 - [ ] User extractor (Async trait)
 
@@ -54,6 +70,7 @@ The documentation is also important. If you have any improvements just for the R
 - [ ] Use client side redirects
 - [ ] User privileges
 - [ ] Split login tokens from session tokens?
+- [ ] Unicode normalization for all input strings
 
 # Building and Running
 

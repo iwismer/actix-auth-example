@@ -36,7 +36,7 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
     // Send the verification email
     validate_email(&user.user_id, &user.email)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+        .map_err(|s| ServiceError::general(&req, s.message, false))?;
     log::debug!("Sent validation email");
 
     Ok(HttpResponse::Ok()
@@ -62,7 +62,7 @@ pub async fn verify_email(
     ))?;
     verify_email_token(&token)
         .await
-        .map_err(|s| ServiceError::general(&req, s, false))?;
+        .map_err(|s| s.general(&req))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(render_message(

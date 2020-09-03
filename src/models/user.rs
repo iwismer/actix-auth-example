@@ -1,5 +1,6 @@
 /// Module for the struct that represents a single user.
 use crate::db::{get_bson_bool, get_bson_string};
+use crate::models::ServerError;
 
 use bson::{doc, document::Document, Bson};
 use serde::Serialize;
@@ -30,7 +31,7 @@ pub struct User {
 }
 
 impl TryFrom<Document> for User {
-    type Error = String;
+    type Error = ServerError;
 
     fn try_from(item: Document) -> Result<Self, Self::Error> {
         Ok(User {
@@ -38,8 +39,8 @@ impl TryFrom<Document> for User {
             email: get_bson_string("email", &item)?,
             username: get_bson_string("username", &item)?,
             pass_hash: get_bson_string("pass_hash", &item)?,
-            email_validated: get_bson_bool("email_validated", &item)?,
-            totp_active: get_bson_bool("totp_active", &item)?,
+            email_validated: get_bson_bool("email_validated", &item).unwrap_or(false),
+            totp_active: get_bson_bool("totp_active", &item).unwrap_or(false),
             totp_token: get_bson_string("totp_token", &item).ok(),
             totp_backups: match item.get_array("totp_backups") {
                 Ok(arr) => Some(
@@ -51,7 +52,7 @@ impl TryFrom<Document> for User {
                         .collect(),
                 ),
                 Err(e) => {
-                    log::warn!("{}", e);
+                    log::warn!("totp_backups: {}", e);
                     None
                 }
             },

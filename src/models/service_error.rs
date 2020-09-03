@@ -59,6 +59,14 @@ impl ServiceError {
     }
 }
 
+#[macro_export]
+macro_rules! err_general {
+    ($req:expr, $msg:expr) => {{
+        log::error!("{}", $msg);
+        ServiceError::general($req, $msg, true)
+    }};
+}
+
 impl fmt::Display for ServiceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.code.as_str())
