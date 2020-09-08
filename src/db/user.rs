@@ -26,6 +26,23 @@ pub async fn get_user_by_username(username: &str) -> Result<Option<User>, Server
     )
 }
 
+/// Get a single user from the DB, searching by username
+pub async fn get_user_by_email(email: &str) -> Result<Option<User>, ServerError> {
+    Ok(
+        match users_collection()?
+            .find_one(Some(doc! {"email": email}), None)
+            .await
+            .map_err(|e| err_server!("Problem querying database for email {}: {}", email, e))?
+        {
+            Some(d) => Some(User::try_from(d).map_err(|mut e| {
+                e.message = format!("Problem parsing user from BSON {}: {}", email, e);
+                e
+            })?),
+            None => None,
+        },
+    )
+}
+
 /// Get a single user from the DB searching by user ID
 pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, ServerError> {
     Ok(

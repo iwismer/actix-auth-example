@@ -5,7 +5,7 @@ use crate::auth::credentials::{
 };
 use crate::auth::email::validate_email;
 use crate::auth::session::{generate_session_token, get_req_user};
-use crate::db::user::{add_user, get_user_by_username};
+use crate::db::user::{add_user, get_user_by_email, get_user_by_username};
 use crate::models::{ServerError, ServiceError, User};
 use crate::templating::{render, render_message};
 
@@ -68,7 +68,21 @@ pub async fn register_post(
     {
         return Err(ServiceError::bad_request(
             &req,
-            &format!("Creating user: user already exists: {}", params.username),
+            &format!(
+                "Cannot create user: {} as that username is taken",
+                params.username
+            ),
+            true,
+        ));
+    }
+    if get_user_by_email(&params.email)
+        .await
+        .map_err(|s| s.general(&req))?
+        .is_some()
+    {
+        return Err(ServiceError::bad_request(
+            &req,
+            &format!("Cannot create user for email: {} as that email is already associated with an account.", params.email),
             true,
         ));
     }

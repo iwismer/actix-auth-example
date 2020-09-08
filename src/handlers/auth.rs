@@ -1,6 +1,6 @@
 /// Module that handles all the authentication related endpoints in the website
 use crate::auth::credentials::{
-    credential_validator_username, generate_password_hash, validate_email_rules,
+    credential_validator_username_email, generate_password_hash, validate_email_rules,
     validate_password_rules, validate_username_rules,
 };
 use crate::auth::email::send_password_reset_email;
@@ -55,7 +55,7 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
 /// Form parameters for the login form.
 #[derive(Serialize, Deserialize)]
 pub struct LoginParams {
-    username: String,
+    identifier: String,
     password: String,
     persist: Option<bool>,
 }
@@ -66,14 +66,20 @@ pub async fn login_post(
     params: Form<LoginParams>,
 ) -> Result<HttpResponse, ServiceError> {
     // Check the username is valid
-    if let Err(e) = validate_username_rules(&params.username) {
-        return Err(e.bad_request(&req));
+    if validate_username_rules(&params.identifier).is_err()
+        && validate_email_rules(&params.identifier).is_err()
+    {
+        return Err(ServiceError::bad_request(
+            &req,
+            "Invalid Username/Email",
+            true,
+        ));
     }
     // Check the password is valid
     if let Err(e) = validate_password_rules(&params.password, &params.password) {
         return Err(e.bad_request(&req));
     }
-    match credential_validator_username(&params.username, &params.password)
+    match credential_validator_username_email(&params.identifier, &params.password)
         .await
         .map_err(|s| s.general(&req))?
     {
@@ -94,7 +100,7 @@ pub async fn login_post(
                     .await
                     .map_err(|s| ServiceError::general(&req, s.message, false))?;
 
-                info!("Successfully logged in user: {}", params.username);
+                info!("Successfully logged in user: {}", params.identifier);
                 Ok(HttpResponse::SeeOther()
                     .header(header::LOCATION, "/zone")
                     .cookie(cookie)
@@ -102,7 +108,7 @@ pub async fn login_post(
             }
         },
         None => {
-            info!("Invalid credentials: {}", &params.username);
+            info!("Invalid credentials: {}", &params.identifier);
             Err(ServiceError::unauthorized(
                 &req,
                 "Invalid credentials.",
