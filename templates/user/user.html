@@ -3,7 +3,6 @@
   <h1>User Details</h1>
 </div>
 <div class="content">
-  One day this will show you your user details.
   <table>
     <tr>
       <td>Username</td>
@@ -22,6 +21,15 @@
       <td>{{user.totp_active}}</td>
     </tr>
   </table>
+  <br>
+  {% if not user.email_validated %}
+  <p><strong>Warning</strong>
+    <br>
+    Your email has not been validated. As long as your email has not been validated, your password cannot be reset if
+    you forget it.
+  </p>
+  <br>
+  {% endif %}
   <a class="pure-button pure-button-primary" href="/user/password">Change password</a>
   <br>
   <a class="pure-button pure-button-primary" href="/user/username">Change username</a>
