@@ -8,17 +8,18 @@ use argon2::{hash_encoded, verify_encoded, Config};
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;
 
+/// Normalize a unicode string
+fn normalize_string(s: &str) -> String {
+    s.nfkc().collect::<String>()
+}
+
 /// Generate a password hash from the supplied password, using a random salt
 pub fn generate_password_hash(password: &str) -> Result<String, ServerError> {
     let config = Config::default();
     let mut salt = [0u8; 32];
     getrandom::getrandom(&mut salt).map_err(|e| err_server!("Error generating salt: {}", e))?;
-    hash_encoded(
-        password.nfkc().collect::<String>().as_bytes(),
-        &salt,
-        &config,
-    )
-    .map_err(|e| err_server!("Error generating hash: {}", e))
+    hash_encoded(normalize_string(password).as_bytes(), &salt, &config)
+        .map_err(|e| err_server!("Error generating hash: {}", e))
 }
 
 /// Generate a random user ID
@@ -28,11 +29,10 @@ pub fn generate_user_id() -> Result<String, ServerError> {
 
 /// Check if the username + password pair are valid
 pub fn credential_validator(user: &User, password: &str) -> Result<bool, ServerError> {
-    Ok(verify_encoded(
-        &user.pass_hash,
-        password.nfkc().collect::<String>().as_bytes(),
+    Ok(
+        verify_encoded(&user.pass_hash, normalize_string(password).as_bytes())
+            .map_err(|e| err_server!("Error verifying hash: {}", e))?,
     )
-    .map_err(|e| err_server!("Error verifying hash: {}", e))?)
 }
 
 /// Check if the username + password pair are valid
@@ -40,16 +40,15 @@ pub async fn credential_validator_username(
     username: &str,
     password: &str,
 ) -> Result<Option<User>, ServerError> {
-    let user = match get_user_by_username(username).await? {
-        Some(u) => u,
+    match get_user_by_username(username).await? {
+        Some(user) => match credential_validator(&user, &password)? {
+            true => Ok(Some(user)),
+            false => Ok(None),
+        },
         None => {
             log::warn!("User doesn't exist: {}", username);
-            return Ok(None);
+            Ok(None)
         }
-    };
-    match credential_validator(&user, &password)? {
-        true => Ok(Some(user)),
-        false => Ok(None),
     }
 }
 
