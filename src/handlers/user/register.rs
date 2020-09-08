@@ -110,7 +110,7 @@ pub async fn register_post(
     if let Some(e) = user_error {
         return Err(ServiceError::general(
             &req,
-            format!("Error generating user ID token: {}", e),
+            format!("Error generating user ID: {}", e),
             false,
         ));
     }
@@ -118,12 +118,11 @@ pub async fn register_post(
     validate_email(&user_id, &params.email)
         .await
         .map_err(|s| s.general(&req))?;
-    let cookie = generate_session_token(&user_id, false)
-        .await
-        .map_err(|s| ServiceError::general(&req, s.message, false))?;
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .cookie(cookie)
+        .cookie(generate_session_token(&user_id, false)
+        .await
+        .map_err(|s| ServiceError::general(&req, s.message, false))?)
         .body(render_message(
             "Registration Success",
             "Welcome! You've successfully registered.",
