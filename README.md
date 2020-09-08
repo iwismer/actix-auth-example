@@ -118,6 +118,25 @@ All forms that require user authentication use CSRF.
 
 See <https://securitytxt.org/>
 
+## Login Credentials
+
+I currently allow logging in via either email or username. This adds the restriction of not allowing email addresses as usernames,
+and forcing emails to be unique to an account. This means that during registration it is possible to determine if an email
+is associated with an account.
+
+Additionally, this can lead to some undesirable security consequences. See <https://security.stackexchange.com/a/139350>.
+
+## Email Validation
+
+The email validation flow I have chosen does not require entering the account password in order to validate the email from the link.
+This was an intentional decision as I don't like conditioning users to clicking links in emails, then having them ask for
+and account password. Instead, it just uses the token from the email, and hoping the user typed in the correct email, and
+that if they didn't, they'll realize and fix it in their account.
+
+I chose not to force email validation for the account to be valid (some websites will delete an account after a specified
+amount of time if the email has not been validated). But, if an account doesn't have a validated email, the password cannot
+be reset from the password reset form.
+
 ## Useful Links
 
 <https://stackoverflow.com/questions/549/the-definitive-guide-to-form-based-website-authentication#477579>
