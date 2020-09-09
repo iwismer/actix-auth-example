@@ -1,8 +1,7 @@
 /// Module for endpoints related to adding new users
 use crate::auth::email::validate_email;
-use crate::auth::session::get_req_user;
 use crate::db::email::verify_email_token;
-use crate::models::ServiceError;
+use crate::models::{ServiceError, User};
 use crate::templating::render_message;
 
 use actix_web::web::Query;
@@ -10,17 +9,7 @@ use actix_web::{HttpRequest, HttpResponse, Result};
 use std::collections::HashMap;
 
 /// Accepts the request from a user to resend an email verification.
-pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
-    let user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::bad_request(
-            &req,
-            "No user found associated with request.",
-            false,
-        ))?;
+pub async fn verify_email_get(req: HttpRequest, user: User) -> Result<HttpResponse, ServiceError> {
     // Don't send again if they're already verified.
     if user.email_validated {
         return Ok(HttpResponse::Ok()
@@ -54,6 +43,7 @@ pub async fn verify_email_get(req: HttpRequest) -> Result<HttpResponse, ServiceE
 pub async fn verify_email(
     req: HttpRequest,
     query: Query<HashMap<String, String>>,
+    user: Option<User>,
 ) -> Result<HttpResponse, ServiceError> {
     let token = query.get("token").ok_or(ServiceError::bad_request(
         &req,
@@ -70,8 +60,6 @@ pub async fn verify_email(
             "Email Verified Successfully.",
             "You can now close this tab.",
             req.uri().path().to_string(),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-            })?,
+            user,
         )?))
 }

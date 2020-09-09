@@ -2,13 +2,11 @@
 use crate::auth::credentials::credential_validator;
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::generate_token;
-use crate::auth::session::get_req_user;
 use crate::auth::totp::{generate_totp_backup_codes, validate_totp_token};
-use crate::config;
-use crate::context;
 use crate::db::user::modify_user;
-use crate::models::ServiceError;
+use crate::models::{ServiceError, User};
 use crate::templating::render;
+use crate::{config, context};
 
 use actix_web::http::header;
 use actix_web::Error;
@@ -17,16 +15,8 @@ use serde::{Deserialize, Serialize};
 use totp_rs::{Algorithm, TOTP};
 
 /// Handler for the page to modify TOTP
-pub async fn get_totp_page(req: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn get_totp_page(req: HttpRequest, mut user: User) -> Result<HttpResponse, Error> {
     let csrf_token = generate_csrf_token().map_err(|s| s.general(&req))?;
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| e.general(&req))?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     // The context depends on whether TOTP is active or not.
     let ctx = match user.totp_active {
         true => context! {
@@ -75,17 +65,9 @@ pub struct AddTotpForm {
 pub async fn add_totp_post(
     req: HttpRequest,
     params: Form<AddTotpForm>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
-    // Get the user from the form
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| e.general(&req))?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     // Check the password entered was correct
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
@@ -137,18 +119,9 @@ pub struct ChangeTotpForm {
 pub async fn remove_totp_post(
     req: HttpRequest,
     params: Form<ChangeTotpForm>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
@@ -170,18 +143,9 @@ pub async fn remove_totp_post(
 pub async fn reset_backup_totp_post(
     req: HttpRequest,
     params: Form<ChangeTotpForm>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !user.totp_active {
         return Err(ServiceError::bad_request(
             &req,

@@ -1,10 +1,7 @@
 /// Module that contains all the functions related to sessions.
-use crate::config;
-use crate::db::session::{add_session, get_session_user_id};
-use crate::db::user::get_user_by_userid;
-use crate::err_server;
+use crate::db::session::add_session;
 use crate::models::ServerError;
-use crate::models::User;
+use crate::{config, err_server};
 
 use actix_http::cookie::{Cookie, SameSite};
 use actix_web::HttpMessage;
@@ -51,23 +48,5 @@ pub async fn generate_session_token(
 
 /// Extract the session token from the request cookies
 pub fn get_session_token<T: HttpMessage>(req: &T) -> Option<String> {
-    req.cookies()
-        .ok()?
-        .iter()
-        .find(|c| c.name() == "session")
-        .map(|c| c.value().to_string())
-}
-
-// TODO replace with extractor when rust allows for async traits
-/// Get the username that sent the request based on the session
-pub async fn get_req_user<T: HttpMessage>(req: &T) -> Result<Option<User>, ServerError> {
-    let user_id = match get_session_token(req) {
-        Some(token) => match get_session_user_id(&token).await? {
-            Some(u) => u,
-            None => return Ok(None),
-        },
-        None => return Ok(None),
-    };
-    log::debug!("userid: {}", user_id);
-    get_user_by_userid(&user_id).await
+    req.cookie("session").map(|c| c.value().to_string())
 }

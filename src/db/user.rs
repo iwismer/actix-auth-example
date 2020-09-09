@@ -2,8 +2,7 @@
 use super::{session_collection, users_collection};
 
 use crate::err_server;
-use crate::models::ServerError;
-use crate::models::User;
+use crate::models::{ServerError, User};
 
 use bson::doc;
 use mongodb::options::UpdateModifications;

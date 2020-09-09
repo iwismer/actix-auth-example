@@ -1,7 +1,6 @@
 /// Module containing the email sending related functions.
-use crate::config;
+use crate::{config, err_server};
 use crate::db::email::{add_email_token, add_password_reset_token};
-use crate::err_server;
 use crate::models::ServerError;
 
 use chrono::{Duration, Utc};

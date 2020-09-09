@@ -1,10 +1,15 @@
 /// Module for the struct that represents a single user.
+use crate::db::session::get_session_user_id;
+use crate::db::user::get_user_by_userid;
 use crate::db::{get_bson_bool, get_bson_string};
-use crate::models::ServerError;
+use crate::models::{ServerError, ServiceError};
 
+use actix_web::{dev, http::StatusCode, FromRequest, HttpMessage, HttpRequest};
 use bson::{doc, document::Document, Bson};
+use futures::Future;
 use serde::Serialize;
 use std::convert::TryFrom;
+use std::pin::Pin;
 
 /// Holds a single user's information.
 #[derive(Serialize, Debug, Clone)]
@@ -86,5 +91,41 @@ impl From<&User> for Document {
             "totp_backups": totp_backups,
             "profile_pic": profile_pic,
         }
+    }
+}
+
+/// Async extractor for users from requests.
+/// It is made async by using a pinned box. See <https://stackoverflow.com/a/63343022>
+impl FromRequest for User {
+    type Error = ServiceError;
+    type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
+    type Config = ();
+    fn from_request(req: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
+        let path = req.uri().path().to_string();
+        let error = ServiceError {
+            code: StatusCode::BAD_REQUEST,
+            path: path,
+            message: "User not logged in.".to_string(),
+            show_message: true,
+        };
+        let cookie = req.cookie("session").map(|c| c.value().to_string());
+
+        Box::pin(async move {
+            let token = match cookie {
+                Some(c) => c,
+                None => return Err(error),
+            };
+            let user_id = match get_session_user_id(&token).await {
+                Ok(s) => match s {
+                    Some(u) => u,
+                    None => return Err(error),
+                },
+                Err(_) => return Err(error),
+            };
+            get_user_by_userid(&user_id)
+                .await
+                .unwrap_or(None)
+                .ok_or(error)
+        })
     }
 }

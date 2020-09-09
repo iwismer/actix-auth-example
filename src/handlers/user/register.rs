@@ -4,7 +4,7 @@ use crate::auth::credentials::{
     validate_username_rules,
 };
 use crate::auth::email::validate_email;
-use crate::auth::session::{generate_session_token, get_req_user};
+use crate::auth::session::generate_session_token;
 use crate::db::user::{add_user, get_user_by_email, get_user_by_username};
 use crate::models::{ServerError, ServiceError, User};
 use crate::templating::{render, render_message};
@@ -19,9 +19,7 @@ pub async fn register_get(req: HttpRequest) -> Result<HttpResponse, ServiceError
         "register.html",
         req.uri().path().to_string(),
         None,
-        get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?,
+        None,
     )?))
 }
 

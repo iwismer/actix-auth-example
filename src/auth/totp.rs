@@ -1,8 +1,7 @@
 use crate::config;
 use crate::db::totp::add_totp_token;
 use crate::db::user::modify_user;
-use crate::models::ServerError;
-use crate::models::User;
+use crate::models::{ServerError, User};
 use crate::{err_input, err_server};
 
 use actix_http::cookie::{Cookie, SameSite};

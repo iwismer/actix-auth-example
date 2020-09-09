@@ -1,6 +1,7 @@
 /// Module that contains all the functions related to authentication.
 use crate::err_server;
 use crate::models::ServerError;
+
 use hex::encode;
 use sha2::{Digest, Sha256};
 

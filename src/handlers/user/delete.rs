@@ -1,8 +1,7 @@
 /// Module for endpoints related to deleting users
-use crate::auth::session::get_req_user;
 use crate::auth::{credentials::credential_validator, csrf::check_csrf};
 use crate::db::user::delete_user;
-use crate::models::ServiceError;
+use crate::models::{ServiceError, User};
 use crate::templating::render_message;
 
 use actix_web::{web::Form, HttpRequest, HttpResponse, Result};
@@ -20,6 +19,7 @@ pub struct DeleteUserParams {
 pub async fn delete_user_post(
     req: HttpRequest,
     params: Form<DeleteUserParams>,
+    user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     if params.confirm != "DELETE ACCOUNT" {
@@ -29,16 +29,6 @@ pub async fn delete_user_post(
             true,
         ));
     }
-    let user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,

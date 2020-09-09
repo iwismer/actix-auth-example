@@ -1,7 +1,6 @@
 /// Module that contains all the functions related to CSRF.
 use crate::config;
-use crate::models::ServerError;
-use crate::models::ServiceError;
+use crate::models::{ServerError, ServiceError};
 
 use actix_http::cookie::{Cookie, SameSite};
 use actix_web::{HttpMessage, HttpRequest};

@@ -1,7 +1,6 @@
 /// Module that contains all the functions related to credentials.
 use crate::db::user::{get_user_by_email, get_user_by_username};
-use crate::models::ServerError;
-use crate::models::User;
+use crate::models::{ServerError, User};
 use crate::{err_input, err_server};
 
 use argon2::{hash_encoded, verify_encoded, Config};

@@ -1,7 +1,6 @@
 /// Module that contains all the DB functions.
-use crate::config;
-use crate::err_server;
 use crate::models::ServerError;
+use crate::{config, err_server};
 
 use bson::{doc, document::Document};
 use lazy_static::lazy_static;

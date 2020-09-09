@@ -4,7 +4,7 @@ use crate::auth::credentials::{
     validate_password_rules, validate_username_rules,
 };
 use crate::auth::email::send_password_reset_email;
-use crate::auth::session::{generate_session_token, get_req_user, get_session_token};
+use crate::auth::session::{generate_session_token, get_session_token};
 use crate::auth::totp::{generate_totp_token, validate_totp};
 use crate::context;
 use crate::db::email::verify_password_reset_token;
@@ -45,9 +45,7 @@ pub async fn login(req: HttpRequest) -> Result<HttpResponse, Error> {
             "login.html",
             req.uri().path().to_string(),
             None,
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-            })?,
+            None,
         )?))
     }
 }
@@ -178,9 +176,7 @@ pub async fn forgot_password_get(req: HttpRequest) -> Result<HttpResponse, Error
         "forgot_password.html",
         req.uri().path().to_string(),
         None,
-        get_req_user(&req).await.map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?,
+        None,
     )?))
 }
 

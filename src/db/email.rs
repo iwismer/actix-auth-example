@@ -4,8 +4,7 @@ use super::user::{get_user_by_userid, modify_user};
 use super::{email_token_collection, password_reset_token_collection};
 
 use crate::auth::hash_token;
-use crate::models::ServerError;
-use crate::models::User;
+use crate::models::{ServerError, User};
 use crate::{err_input, err_server};
 
 use bson::doc;

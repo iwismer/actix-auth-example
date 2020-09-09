@@ -5,12 +5,10 @@ use crate::auth::credentials::{
 };
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::email::validate_email;
-use crate::auth::session::get_req_user;
-use crate::config;
-use crate::context;
 use crate::db::user::{get_user_by_username, modify_user};
-use crate::models::ServiceError;
+use crate::models::{ServiceError, User};
 use crate::templating::{render, render_message};
+use crate::{config, context};
 
 use actix_web::{web::Form, Error, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
@@ -18,7 +16,7 @@ use std::fs;
 use std::path::PathBuf;
 
 /// Generic get page for the modification pages.
-pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn get_page(req: HttpRequest, user: User) -> Result<HttpResponse, Error> {
     let csrf_token =
         generate_csrf_token().map_err(|s| ServiceError::general(&req, s.message, false))?;
     Ok(HttpResponse::Ok()
@@ -35,9 +33,7 @@ pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
             ),
             req.uri().path().to_string(),
             Some(context! { "csrf" => &csrf_token }),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-            })?,
+            Some(user),
         )?))
 }
 
@@ -54,6 +50,7 @@ pub struct ChangePasswordParams {
 pub async fn change_password_post(
     req: HttpRequest,
     params: Form<ChangePasswordParams>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     // Check the password is valid
@@ -64,16 +61,6 @@ pub async fn change_password_post(
             true,
         ));
     }
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
@@ -95,9 +82,7 @@ pub async fn change_password_post(
             "Password Changed Successfully.",
             "The password for your account was updated successfully. Make sure you update the new password in your password manager.",
             req.uri().path().to_string(),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-            })?,
+            Some(user),
         )?))
 }
 
@@ -113,6 +98,7 @@ pub struct ChangeUsernameParams {
 pub async fn change_username_post(
     req: HttpRequest,
     params: Form<ChangeUsernameParams>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     if let Err(e) = validate_username_rules(&params.new_username) {
@@ -134,14 +120,6 @@ pub async fn change_username_post(
             true,
         ));
     }
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| e.general(&req))?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
@@ -161,9 +139,7 @@ pub async fn change_username_post(
             "Username Changed Successfully.",
             "The username for your account was updated successfully. Make sure you update to the new username in your password manager.",
             req.uri().path().to_string(),
-            get_req_user(&req).await.map_err(|e| {
-                ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-            })?,
+            Some(user),
         )?))
 }
 
@@ -179,6 +155,7 @@ pub struct ChangeEmailParams {
 pub async fn change_email_post(
     req: HttpRequest,
     params: Form<ChangeEmailParams>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
     // Check the email is valid
@@ -189,16 +166,6 @@ pub async fn change_email_post(
             true,
         ));
     }
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
     if !credential_validator(&user, &params.current_password).map_err(|e| e.general(&req))? {
         return Err(ServiceError::bad_request(
             &req,
@@ -223,29 +190,17 @@ pub async fn change_email_post(
             "Email Changed Successfully.",
             "The email for your account was updated successfully. A verification email has been sent to the new email.",
             req.uri().path().to_string(),
-            get_req_user(&req).await.map_err(|e| {
-                e.general(&req)
-            })?,
+            Some(user),
         )?))
 }
 
 pub async fn profile_pic_post(
     req: HttpRequest,
     mut parts: awmp::Parts,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     let text_fields = parts.texts.as_hash_map();
     check_csrf(text_fields.get("csrf").map(|s| s.to_string()), &req).await?;
-
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
 
     let file = parts
         .files
@@ -308,19 +263,9 @@ pub struct DeletePictureParams {
 pub async fn profile_pic_delete_post(
     req: HttpRequest,
     params: Form<DeletePictureParams>,
+    mut user: User,
 ) -> Result<HttpResponse, ServiceError> {
     check_csrf(Some(&params.csrf), &req).await?;
-
-    let mut user = get_req_user(&req)
-        .await
-        .map_err(|e| {
-            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
-        })?
-        .ok_or(ServiceError::general(
-            &req,
-            "No user found in request.",
-            false,
-        ))?;
 
     let url = match user.profile_pic {
         Some(u) => u,

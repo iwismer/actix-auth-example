@@ -66,7 +66,7 @@ The documentation is also important. If you have any improvements just for the R
   - [x] Add error creation macros
   - [x] Log error before passing up the chain
   - [ ] Simplify error handling on result(option()) functions
-- [ ] User extractor (Async trait)
+- [x] User extractor (Async trait)
 
 ### Maybes
 
@@ -112,6 +112,16 @@ Tokens are hashed with SHA256 before being stored in the database. This is to en
 simply impersonate users by using their session tokens, or log in with their TOTP backup codes. Since the codes are sufficiently long
 and random, they don't need to be salted or use a password specific hashing algorithm.
 
+## Token Generation
+
+I chose to use 32 byte randomly generated tokens. This gives me virtual certainty of no collisions. I use the secure RNG
+from the `getrandom` crate.
+
+You can also use a UUIDv4 if you want, as long as you also use a secure random number generator.
+
+Whenever I update a field in the DB that has a uniqueness index on it, I retry a few times in case of a collision.
+This isn't strictly required as the chances of collision are near zero, but I added it anyways.
+
 ## CSRF
 
 To prevent request forgery this example uses the [Double Submit Cookie](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) method of CSRF prevention. This method was chosen since it requires no client side JS.
@@ -142,16 +152,6 @@ amount of time if the email has not been validated). But, if an account doesn't 
 be reset from the password reset form.
 
 Requesting a validation email should be rate limited to prevent spam.
-
-## Token Generation
-
-I chose to use 32 byte randomly generated tokens. This gives me virtual certainty of no collisions. I use the secure RNG
-from the `getrandom` crate.
-
-You can also use a UUIDv4 if you want, as long as you also use a secure random number generator.
-
-Whenever I update a field in the DB that has a uniqueness index on it, I retry a few times in case of a collision.
-This isn't strictly required as the chances of collision are near zero, but I added it anyways.
 
 ## Useful Links
 
