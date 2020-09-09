@@ -6,6 +6,7 @@ use crate::auth::credentials::{
 use crate::auth::csrf::{check_csrf, csrf_cookie, generate_csrf_token};
 use crate::auth::email::validate_email;
 use crate::auth::session::get_req_user;
+use crate::config;
 use crate::context;
 use crate::db::user::{get_user_by_username, modify_user};
 use crate::models::ServiceError;
@@ -13,6 +14,8 @@ use crate::templating::{render, render_message};
 
 use actix_web::{web::Form, Error, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 /// Generic get page for the modification pages.
 pub async fn get_page(req: HttpRequest) -> Result<HttpResponse, Error> {
@@ -223,5 +226,128 @@ pub async fn change_email_post(
             get_req_user(&req).await.map_err(|e| {
                 e.general(&req)
             })?,
+        )?))
+}
+
+pub async fn profile_pic_post(
+    req: HttpRequest,
+    mut parts: awmp::Parts,
+) -> Result<HttpResponse, ServiceError> {
+    let text_fields = parts.texts.as_hash_map();
+    check_csrf(text_fields.get("csrf").map(|s| s.to_string()), &req).await?;
+
+    let mut user = get_req_user(&req)
+        .await
+        .map_err(|e| {
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
+        })?
+        .ok_or(ServiceError::general(
+            &req,
+            "No user found in request.",
+            false,
+        ))?;
+
+    let file = parts
+        .files
+        .take("profile_pic")
+        .pop()
+        .ok_or(ServiceError::bad_request(
+            &req,
+            "Picture missing from request",
+            true,
+        ))?;
+    log::debug!("Got file from request.");
+    // Use the first 2 chars of the userID first, so there isn't a huge folder with all userIDs
+    // This improves performance
+    let save_path = config::STORAGE_DIR
+        .join(user.user_id[..2].to_string())
+        .join(&user.user_id);
+    let new_path = PathBuf::from("/s/")
+        .join(user.user_id[..2].to_string())
+        .join(&user.user_id)
+        .join(file.sanitized_file_name())
+        .as_os_str()
+        .to_string_lossy()
+        .to_string();
+    // TODO change the file name to the userID and don't have a userID folder
+    fs::create_dir_all(save_path.as_path()).map_err(|e| {
+        ServiceError::general(&req, format!("Unable to create folder: {}", e), false)
+    })?;
+    // Save the new picture
+    file.persist(save_path.as_path())
+        .map_err(|e| ServiceError::general(&req, format!("{}", e), false))?;
+    // remove old profile picture
+    if let Some(url) = user.profile_pic {
+        let old_path = config::STORAGE_DIR.join(url[3..].to_string());
+        fs::remove_file(old_path.as_path()).map_err(|e| {
+            ServiceError::general(&req, format!("Unable to delete picture: {}", e), false)
+        })?;
+    }
+    // Don't change the user until everything has completed successfully
+    user.profile_pic = Some(new_path);
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
+    log::debug!("Modified user profile picture");
+
+    Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(render_message(
+            "Profile Picture Changed",
+            "Profile Picture Changed Successfully.",
+            "The profile picture for your account was updated successfully.",
+            req.uri().path().to_string(),
+            Some(user),
+        )?))
+}
+
+/// Form parameters for changing a username.
+#[derive(Serialize, Deserialize)]
+pub struct DeletePictureParams {
+    csrf: String,
+}
+
+pub async fn profile_pic_delete_post(
+    req: HttpRequest,
+    params: Form<DeletePictureParams>,
+) -> Result<HttpResponse, ServiceError> {
+    check_csrf(Some(&params.csrf), &req).await?;
+
+    let mut user = get_req_user(&req)
+        .await
+        .map_err(|e| {
+            ServiceError::general(&req, format!("Error getting request user: {}", e), false)
+        })?
+        .ok_or(ServiceError::general(
+            &req,
+            "No user found in request.",
+            false,
+        ))?;
+
+    let url = match user.profile_pic {
+        Some(u) => u,
+        None => {
+            return Err(ServiceError::bad_request(
+                &req,
+                "Profile picture already removed.",
+                true,
+            ))
+        }
+    };
+
+    let path = config::STORAGE_DIR.join(url[3..].to_string());
+    fs::remove_file(path.as_path()).map_err(|e| {
+        ServiceError::general(&req, format!("Unable to delete picture: {}", e), false)
+    })?;
+    user.profile_pic = None;
+    modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
+    log::debug!("Removed user profile picture");
+
+    Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(render_message(
+            "Profile Picture Changed",
+            "Profile Picture Changed Successfully.",
+            "The profile picture for your account was updated successfully.",
+            req.uri().path().to_string(),
+            Some(user),
         )?))
 }

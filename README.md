@@ -42,18 +42,22 @@ The documentation is also important. If you have any improvements just for the R
 - [x] Allow changing password, username, email
 - [x] Validate email
 - [ ] OAuth
+  - [ ] Google
+  - [ ] Microsoft
+  - [ ] Github
+  - [ ] Gitlab
+  - [ ] ...
 - [X] Add script to automatically setup up mongo
 - [ ] User profile picture
-  - Resize on upload
-  - Put them in the DB
-  - display on the profile page
+  - [ ] Display on the profile page
+  - [ ] Manipulate on upload
 - [x] Logout button in menu if logged in
 - [x] redirect away from login page if logged in
 - [x] Keep me signed in checkbox (also set session key on each request)
 - [x] Forgotten password
 - [x] Auto retry on insertion of unique fields
 - [x] Generic message page
-- [ ] Time delay lockout to prevent brute force (credentials and TOTP)
+- [ ] Time delay lockout to prevent brute force (credentials, TOTP, email validation)
 - [ ] Improve logging and error handling
   - [ ] Different log and user facing messages
   - [x] Choose whether or not to show error message
@@ -137,9 +141,27 @@ I chose not to force email validation for the account to be valid (some websites
 amount of time if the email has not been validated). But, if an account doesn't have a validated email, the password cannot
 be reset from the password reset form.
 
+Requesting a validation email should be rate limited to prevent spam.
+
+## Token Generation
+
+I chose to use 32 byte randomly generated tokens. This gives me virtual certainty of no collisions. I use the secure RNG
+from the `getrandom` crate.
+
+You can also use a UUIDv4 if you want, as long as you also use a secure random number generator.
+
+Whenever I update a field in the DB that has a uniqueness index on it, I retry a few times in case of a collision.
+This isn't strictly required as the chances of collision are near zero, but I added it anyways.
+
 ## Useful Links
 
 <https://stackoverflow.com/questions/549/the-definitive-guide-to-form-based-website-authentication#477579>
+
+## Mobile friendliness
+
+I didn't really try to make this mobile friendly. TO be honest, I didn't really spend much time at all with the style/front end
+(if you couldn't tell). There is still some CSS laying around that is copied from some other projects I've worked on in the past
+that was mobile friendly.
 
 # License
 

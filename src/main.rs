@@ -3,7 +3,7 @@ use actix_files::Files;
 use actix_http::http::{PathAndQuery, Uri};
 use actix_service::Service;
 use actix_web::{http::header, middleware, web, App, HttpResponse, HttpServer};
-use log::info;
+use std::fs;
 
 mod auth;
 mod config;
@@ -17,11 +17,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     std::env::set_var("RUST_LOG", "info");
 
-    info!(
-        "Starting http server: {}:{}",
-        config::SERVER_ADDR.as_str(),
-        config::SERVER_PORT.as_str()
-    );
+    // Create a temp folder for the uploaded files. It must be on the same device
+    // as the storage dir, so just create it within it.
+    fs::create_dir_all(config::STORAGE_DIR.join("tmp"))
+        .expect("Unable to create results and temporary directories");
+
     // start http server
     HttpServer::new(move || {
         App::new()
@@ -75,6 +75,11 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/user")
                     .wrap(auth::middleware::AuthCheckService::require_auth())
+                    .data(
+                        awmp::PartsConfig::default()
+                            .with_file_limit(2_000_000)
+                            .with_temp_dir(config::STORAGE_DIR.as_path().join("tmp")),
+                    )
                     .service(web::resource("").route(web::get().to(handlers::user::view_user)))
                     .service(
                         web::resource("/2fa")
@@ -105,6 +110,14 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::resource("/password")
                             .route(web::post().to(handlers::user::modify::change_password_post)),
+                    )
+                    .service(
+                        web::resource("/picture")
+                            .route(web::post().to(handlers::user::modify::profile_pic_post)),
+                    )
+                    .service(
+                        web::resource("/picture-del")
+                            .route(web::post().to(handlers::user::modify::profile_pic_delete_post)),
                     )
                     .service(
                         web::resource("/2fa-add")
@@ -161,6 +174,7 @@ async fn main() -> std::io::Result<()> {
             // Static resources
             .service(Files::new("/static", "static/"))
             .service(Files::new("/.well-known", ".well-known/"))
+            .service(Files::new("/s", config::STORAGE_DIR.as_path()))
             // 404 handler
             .default_service(web::route().to(handlers::p404))
     })

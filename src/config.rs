@@ -1,6 +1,7 @@
 /// Module that contains all the configuration from environment variables.
 use lazy_static::lazy_static;
 use std::env;
+use std::path::PathBuf;
 use url::Url;
 
 lazy_static! {
@@ -51,4 +52,6 @@ lazy_static! {
     /// The password to use for authentication with the email server
     pub static ref EMAIL_PASS: String = env::var("EMAIL_PASS").unwrap_or("".to_string());
 
+    /// The location to store files uploaded by the user at (eg profile pictures), including training slash
+    pub static ref STORAGE_DIR: PathBuf = PathBuf::from(env::var("STORAGE_DIR").expect("Storage location not specified in STORAGE_DIR."));
 }

@@ -22,6 +22,12 @@
     </tr>
   </table>
   <br>
+  {% if user.profile_pic %}
+  <strong>Profile Picture:</strong>
+  <br>
+  <img src="{{user.profile_pic}}" alt="profile picture" class="pure-img profile-pic">
+  <br>
+  {% endif %}
   {% if not user.email_validated %}
   <p><strong>Warning</strong>
     <br>
@@ -30,20 +36,25 @@
   </p>
   <br>
   {% endif %}
-  <a class="pure-button pure-button-primary" href="/user/password">Change password</a>
+  <a class="pure-button pure-button-primary margin-5px" href="/user/password">Change password</a>
   <br>
-  <a class="pure-button pure-button-primary" href="/user/username">Change username</a>
+  <a class="pure-button pure-button-primary margin-5px" href="/user/username">Change username</a>
   <br>
-  <a class="pure-button pure-button-primary" href="/user/picture">Change profile picture</a>
-  <br>
-  <a class="pure-button pure-button-primary" href="/user/email">Change email</a>
+  <a class="pure-button pure-button-primary margin-5px" href="/user/email">Change email</a>
   <br>
   {% if not user.email_validated%}
-  <a class="pure-button pure-button-primary" href="/user/validate-email">Resend email validation</a>
+  <a class="pure-button pure-button-primary margin-5px" href="/user/validate-email">Resend email validation</a>
   <br>
   {% endif %}
-  <a class="pure-button pure-button-primary" href="/user/2fa">2FA Settings</a>
+  {% if user.profile_pic%}
+  <a class="pure-button pure-button-primary margin-5px" href="/user/picture">Change Profile Picture</a>
   <br>
-  <a class="pure-button button-danger" href="/user/delete">Delete Account</a>
+  {% else %}
+  <a class="pure-button pure-button-primary margin-5px" href="/user/picture">Add Profile Picture</a>
+  <br>
+  {% endif %}
+  <a class="pure-button pure-button-primary margin-5px" href="/user/2fa">2FA Settings</a>
+  <br>
+  <a class="pure-button button-danger margin-5px" href="/user/delete">Delete Account</a>
 </div>
 {% endblock %}
