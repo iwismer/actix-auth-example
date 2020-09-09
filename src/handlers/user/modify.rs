@@ -208,7 +208,7 @@ pub async fn profile_pic_post(
         .pop()
         .ok_or(ServiceError::bad_request(
             &req,
-            "Picture missing from request",
+            "Picture too large or missing from request",
             true,
         ))?;
     log::debug!("Got file from request.");
