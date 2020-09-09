@@ -48,8 +48,8 @@ The documentation is also important. If you have any improvements just for the R
   - [ ] Gitlab
   - [ ] ...
 - [X] Add script to automatically setup up mongo
-- [ ] User profile picture
-  - [ ] Display on the profile page
+- [x] User profile picture
+  - [x] Display on the profile page
   - [ ] Manipulate on upload
 - [x] Logout button in menu if logged in
 - [x] redirect away from login page if logged in
