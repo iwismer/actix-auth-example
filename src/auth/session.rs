@@ -7,6 +7,7 @@ use actix_http::cookie::{Cookie, SameSite};
 use actix_web::HttpMessage;
 use chrono::{Duration, Utc};
 use log::warn;
+use time::Duration as Dur;
 
 /// Create a session token for a specific user
 pub async fn generate_session_token(
@@ -31,7 +32,7 @@ pub async fn generate_session_token(
                     .same_site(SameSite::Strict)
                     .finish();
                 if persistant {
-                    cookie.set_max_age(Duration::days(30));
+                    cookie.set_max_age(Dur::days(30));
                 }
                 return Ok(cookie);
             }

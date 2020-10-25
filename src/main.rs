@@ -1,7 +1,5 @@
 /// This is an example for using different auths with actix
 use actix_files::Files;
-use actix_http::http::{PathAndQuery, Uri};
-use actix_service::Service;
 use actix_web::{http::header, middleware, web, App, HttpResponse, HttpServer};
 use std::fs;
 
@@ -30,38 +28,14 @@ async fn main() -> std::io::Result<()> {
                 middleware::DefaultHeaders::new().header(header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
             )
             // Removes trailing slash in the URL to make is so I don't need as many services
-            // TODO remove in actix-web 3.0 since it adds a trailing slash
-            .wrap_fn(|mut req, srv| {
-                let head = req.head();
-                let mut new_path = head.uri.path().to_string();
-                // If the URL ends in a /
-                if new_path.pop() == Some('/') {
-                    let mut parts = head.uri.clone().into_parts();
-                    let pq = parts.path_and_query.as_ref().unwrap();
-
-                    // Attach the query params back onto the path
-                    let path = match pq.query() {
-                        Some(q) => format!("{}?{}", new_path, q),
-                        None => new_path,
-                    }
-                    .as_bytes()
-                    .to_vec();
-                    parts.path_and_query = Some(PathAndQuery::from_maybe_shared(path).unwrap());
-
-                    // Set the URI of the request
-                    let uri = Uri::from_parts(parts).unwrap();
-                    req.match_info_mut().get_mut().update(&uri);
-                    req.head_mut().uri = uri;
-                }
-                srv.call(req)
-            })
-            // Remove duplicate slashes in the URL
-            .wrap(middleware::NormalizePath::default())
+            .wrap(middleware::NormalizePath::new(
+                middleware::normalize::TrailingSlash::Trim,
+            ))
             // enable logging
             .wrap(middleware::Logger::default())
             // Home page
             .service(
-                web::resource("")
+                web::resource("/")
                     .wrap(auth::middleware::AuthCheckService::disallow_auth("/zone"))
                     .route(web::get().to(handlers::home)),
             )

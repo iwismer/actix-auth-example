@@ -6,6 +6,7 @@ use crate::{err_input, err_server};
 
 use actix_http::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
+use time::Duration as Dur;
 use totp_rs::{Algorithm, TOTP};
 
 /// Create a totp token for a specific user
@@ -32,7 +33,7 @@ pub async fn generate_totp_token(
                     .secure(*config::PRODUCTION)
                     .http_only(true)
                     .same_site(SameSite::Strict)
-                    .max_age(Duration::minutes(5).num_seconds())
+                    .max_age(Dur::minutes(5))
                     .finish());
             }
             Err(e) => log::warn!(

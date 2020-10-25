@@ -214,32 +214,46 @@ pub async fn profile_pic_post(
     log::debug!("Got file from request.");
     // Use the first 2 chars of the userID first, so there isn't a huge folder with all userIDs
     // This improves performance
-    let save_path = config::STORAGE_DIR
-        .join(user.user_id[..2].to_string())
-        .join(&user.user_id);
-    let new_path = PathBuf::from("/s/")
-        .join(user.user_id[..2].to_string())
-        .join(&user.user_id)
-        .join(file.sanitized_file_name())
+    let pic_path = PathBuf::from(format!("{}/pic.jpg", user.user_id[..2].to_string()))
+        .with_file_name(&user.user_id)
+        .with_extension(
+            PathBuf::from(file.sanitized_file_name())
+                .extension()
+                .and_then(|s| Some(s.to_string_lossy().to_string()))
+                .unwrap_or("jpg".to_string()),
+        );
+    let save_path = config::STORAGE_DIR.join(&pic_path);
+    let pic_url = PathBuf::from("/s/")
+        .join(&pic_path)
         .as_os_str()
         .to_string_lossy()
         .to_string();
-    // TODO change the file name to the userID and don't have a userID folder
-    fs::create_dir_all(save_path.as_path()).map_err(|e| {
-        ServiceError::general(&req, format!("Unable to create folder: {}", e), false)
-    })?;
-    // Save the new picture
-    file.persist(save_path.as_path())
-        .map_err(|e| ServiceError::general(&req, format!("{}", e), false))?;
+    log::debug!(
+        "Pic: {:?}\nsave: {:?}\nurl: {}\n userid: {:?}",
+        pic_path,
+        save_path,
+        pic_url,
+        PathBuf::from(format!("{}/", user.user_id[..2].to_string()))
+    );
+    if let Some(p) = save_path.parent() {
+        fs::create_dir_all(p).map_err(|e| {
+            ServiceError::general(&req, format!("Unable to create folder: {}", e), false)
+        })?;
+    }
     // remove old profile picture
+    // TODO rename, then delete after new photo is added
     if let Some(url) = user.profile_pic {
         let old_path = config::STORAGE_DIR.join(url[3..].to_string());
+        log::debug!("{:?}", old_path);
         fs::remove_file(old_path.as_path()).map_err(|e| {
             ServiceError::general(&req, format!("Unable to delete picture: {}", e), false)
         })?;
     }
+    // Save the new picture
+    file.persist_at(save_path.as_path())
+        .map_err(|e| ServiceError::general(&req, format!("{}", e), false))?;
     // Don't change the user until everything has completed successfully
-    user.profile_pic = Some(new_path);
+    user.profile_pic = Some(pic_url);
     modify_user(&user).await.map_err(|s| s.bad_request(&req))?;
     log::debug!("Modified user profile picture");
 
