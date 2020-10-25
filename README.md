@@ -1,5 +1,7 @@
 # Actix Authentication Example
 
+**Warning: This is still a work in progress!** Take a look at the todo list to see what's done.
+
 ## Why?
 
 I made this project to learn a bit more about modern authentication on the web, and to practise my skills with Rust.
