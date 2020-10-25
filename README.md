@@ -2,6 +2,8 @@
 
 **Warning: This is still a work in progress!** Take a look at the todo list to see what's done.
 
+**Warning #2: This does not build with Rust stable or nightly** Due to a bug in rustc (<https://github.com/rust-lang/rust/issues/75992>) the latest version of rust that will compile this is 1.45.2
+
 ## Why?
 
 I made this project to learn a bit more about modern authentication on the web, and to practise my skills with Rust.
