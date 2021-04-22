@@ -105,11 +105,9 @@ impl ResponseError for ServiceError {
                 format!("500 Internal Server Error.")
             }
         };
-        HttpResponse::build(status_code)
+        HttpResponse::build(status_code.clone())
             .content_type("text/html")
-            .if_true(status_code == StatusCode::UNAUTHORIZED, |b| {
-                b.header(header::WWW_AUTHENTICATE, "Cookie");
-            })
+            .header(header::WWW_AUTHENTICATE, "Cookie")
             .body(body)
     }
 }

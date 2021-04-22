@@ -5,33 +5,33 @@ authors = ["Isaac Wismer <isaac@iwismer.ca>"]
 edition = "2018"
 
 [dependencies]
-actix-files = "0.4.0"
-actix-http = "2.0.0"
+actix-files = "0.5.0"
+actix-http = "2.2.0"
 actix-rt = "1.1.1"
 actix-service = "1.0.6"
-actix-web = "3.1.0"
+actix-web = "3.3.2"
 awmp = "0.6.0"
-bson = "1.1.0"
+bson = "1.2.2"
 chrono = "0.4.19"
-env_logger = "0.8.1"
-futures = "0.3.7"
-getrandom = "0.2.0"
-hex = "0.4.2"
+env_logger = "0.8.3"
+futures = "0.3.14"
+getrandom = "0.2.2"
+hex = "0.4.3"
 lazy_static = "1.4.0"
-lettre = "0.9.3"
+lettre = "0.9.5"
 lettre_email = "0.9.4"
-log = { version = "0.4.11", features = ["max_level_debug", "release_max_level_info"] }
-mongodb = "1.1.1"
+log = { version = "0.4.14", features = ["max_level_debug", "release_max_level_info"] }
+mongodb = "1.2.1"
 # oauth2 = { version = "3.0", features = ["futures-03", "reqwest-010"], default-features = false }
-regex = "1.4.1"
-rust-argon2 = "0.8.2"
-serde = "1.0.117"
-sha2 = "0.9.1"
-tera = "1.5.0"
-time = "0.2.22"
-totp-rs = { version = "0.6.2", features = ["qr"] }
-unicode-normalization = "0.1.13"
-url = "2.1.1"
+regex = "1.4.5"
+rust-argon2 = "0.8.3"
+serde = "1.0.125"
+sha2 = "0.9.3"
+tera = "1.8.0"
+time = "0.2.26"
+totp-rs = { version = "0.6.3", features = ["qr"] }
+unicode-normalization = "0.1.17"
+url = "2.2.1"
 
 [profile.release]
 lto = true
