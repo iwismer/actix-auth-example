@@ -4,7 +4,7 @@ use crate::db::user::get_user_by_userid;
 use crate::db::{get_bson_bool, get_bson_string};
 use crate::models::{ServerError, ServiceError};
 
-use actix_web::{dev, http::StatusCode, FromRequest, HttpMessage, HttpRequest};
+use actix_web::{dev, http::StatusCode, FromRequest, HttpRequest};
 use bson::{doc, document::Document, Bson};
 use futures::Future;
 use serde::Serialize;
@@ -99,7 +99,6 @@ impl From<&User> for Document {
 impl FromRequest for User {
     type Error = ServiceError;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
-    type Config = ();
     fn from_request(req: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         let path = req.uri().path().to_string();
         let error = ServiceError {

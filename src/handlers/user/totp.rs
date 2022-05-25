@@ -135,7 +135,7 @@ pub async fn remove_totp_post(
     log::debug!("Modified user -> disable TOTP");
     Ok(HttpResponse::SeeOther()
         .content_type("text/html")
-        .header(header::LOCATION, "/user")
+        .append_header((header::LOCATION, "/user"))
         .finish())
 }
 

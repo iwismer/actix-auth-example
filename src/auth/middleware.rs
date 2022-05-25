@@ -1,7 +1,8 @@
 /// Module that contains all the auth middleware.
-use crate::auth::session::get_session_token;
+use crate::auth::session::get_session_token_service_request;
 use crate::db::session::validate_session;
 
+use actix_http::body::BoxBody;
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header;
@@ -44,14 +45,12 @@ impl AuthCheckService {
     }
 }
 
-impl<S, B> Transform<S> for AuthCheckService
+impl<S> Transform<S, ServiceRequest> for AuthCheckService
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error> + 'static,
     S::Future: 'static,
-    B: 'static,
 {
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<BoxBody>;
     type Error = Error;
     type InitError = ();
     type Transform = AuthCheckMiddleware<S>;
@@ -70,27 +69,25 @@ pub struct AuthCheckMiddleware<S> {
     strategy: AuthRedirectStrategy,
 }
 
-impl<S, B> Service for AuthCheckMiddleware<S>
+impl<S> Service<ServiceRequest> for AuthCheckMiddleware<S>
 where
-    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error> + 'static,
     S::Future: 'static,
-    B: 'static,
 {
-    type Request = ServiceRequest;
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<BoxBody>;
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(cx)
     }
 
-    fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        let mut srv = self.service.clone();
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let srv = self.service.clone();
         let strategy = self.strategy.clone();
         // Run this async so we can use async functions.
         Box::pin(async move {
-            let is_logged_in = match get_session_token(&req) {
+            let is_logged_in = match get_session_token_service_request(&req) {
                 Some(t) => match validate_session(&t).await {
                     Ok(v) => v,
                     Err(e) => {
@@ -104,25 +101,23 @@ where
                 AuthRedirectStrategy::RequireAuth => match is_logged_in {
                     true => {
                         log::debug!("Authentication succeeded, continuing request.");
-                        srv.call(req).await
+                        srv.call(req).await.map(|res| res.map_into_boxed_body())
                     }
                     false => {
                         log::debug!("Authentication failed, redirecting.");
                         Ok(req.into_response(
                             HttpResponse::Found()
-                                .header(header::LOCATION, "/login")
-                                .finish()
-                                .into_body(),
+                                .append_header((header::LOCATION, "/login"))
+                                .finish(),
                         ))
                     }
                 },
                 AuthRedirectStrategy::DisallowAuth(s) => match is_logged_in {
-                    false => srv.call(req).await,
+                    false => srv.call(req).await.map(|res| res.map_into_boxed_body()),
                     true => Ok(req.into_response(
                         HttpResponse::Found()
-                            .header(header::LOCATION, s.as_str())
-                            .finish()
-                            .into_body(),
+                            .append_header((header::LOCATION, s.as_str()))
+                            .finish(),
                     )),
                 },
             }

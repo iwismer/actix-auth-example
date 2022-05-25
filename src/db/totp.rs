@@ -19,7 +19,7 @@ pub async fn add_totp_token(
     // Uniqueness is taken care of by an index in the DB
     totp_token_collection()?
         .insert_one(
-            doc! { "user_id": user_id, "token": hashed_token, "persist": persist, "expiry": expiry },
+            doc! { "user_id": user_id, "token": hashed_token, "persist": persist, "expiry": bson::DateTime::from_chrono(expiry) },
             None,
         )
         .await

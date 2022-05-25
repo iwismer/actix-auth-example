@@ -19,7 +19,7 @@ pub async fn validate_session(token: &str) -> Result<bool, ServerError> {
         Some(item) => Ok(item
             .get_datetime("expiry")
             .map_err(|e| err_server!("Unable to get expiry from BSON: {}", e))?
-            > &Utc::now()),
+            > &bson::DateTime::now()),
         None => Ok(false),
     }
 }

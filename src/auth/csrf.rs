@@ -2,8 +2,8 @@
 use crate::config;
 use crate::models::{ServerError, ServiceError};
 
-use actix_http::cookie::{Cookie, SameSite};
-use actix_web::{HttpMessage, HttpRequest};
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::HttpRequest;
 
 /// Generate a new random csrf token
 pub fn generate_csrf_token() -> Result<String, ServerError> {

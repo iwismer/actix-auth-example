@@ -4,20 +4,20 @@ use crate::auth::credentials::{
     validate_password_rules, validate_username_rules,
 };
 use crate::auth::email::send_password_reset_email;
-use crate::auth::session::{generate_session_token, get_session_token};
+use crate::auth::session::{generate_session_token, get_session_token_http_request};
 use crate::auth::totp::{generate_totp_token, validate_totp};
-use crate::context;
 use crate::db::email::verify_password_reset_token;
 use crate::db::session::delete_session;
 use crate::db::totp::{check_totp_token_exists, verify_totp_token};
 use crate::db::user::{get_user_by_userid, get_user_by_username, modify_user};
 use crate::models::ServiceError;
 use crate::templating::{render, render_message};
+use crate::{config, context};
 
-use actix_http::cookie::Cookie;
+use actix_web::cookie::Cookie;
 use actix_web::http::header;
 use actix_web::web::{Form, Query};
-use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse, Result};
+use actix_web::{Error, HttpRequest, HttpResponse, Result};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -89,7 +89,7 @@ pub async fn login_post(
                         .await
                         .map_err(|s| s.general(&req))?;
                 Ok(HttpResponse::SeeOther()
-                    .header(header::LOCATION, "/login")
+                    .append_header((header::LOCATION, "/login"))
                     .cookie(totp_cookie)
                     .finish())
             }
@@ -100,7 +100,7 @@ pub async fn login_post(
 
                 info!("Successfully logged in user: {}", params.identifier);
                 Ok(HttpResponse::SeeOther()
-                    .header(header::LOCATION, "/zone")
+                    .append_header((header::LOCATION, "/zone"))
                     .cookie(cookie)
                     .finish())
             }
@@ -163,10 +163,15 @@ pub async fn totp_post(
         .await
         .map_err(|s| ServiceError::general(&req, s.message, false))?;
     info!("Successfully logged in user: {}", user.username);
+    let mut totp_cookie = Cookie::build("totp", "")
+        .domain(config::COOKIE_DOMAIN.as_str())
+        .path("/")
+        .finish();
+    totp_cookie.make_removal();
     Ok(HttpResponse::SeeOther()
-        .header(header::LOCATION, "/zone")
+        .append_header((header::LOCATION, "/zone"))
         .cookie(cookie)
-        .del_cookie(&Cookie::named("totp"))
+        .cookie(totp_cookie)
         .finish())
 }
 
@@ -299,7 +304,7 @@ pub async fn password_reset_post(
 
 /// Logout request handler
 pub async fn logout(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
-    let token = get_session_token(&req);
+    let token = get_session_token_http_request(&req);
     match token {
         Some(t) => {
             delete_session(&t).await.map_err(|s| s.general(&req))?;
@@ -309,9 +314,19 @@ pub async fn logout(req: HttpRequest) -> Result<HttpResponse, ServiceError> {
             warn!("Token not found in request to log out");
         }
     }
+    let mut session_cookie = Cookie::build("session", "")
+        .domain(config::COOKIE_DOMAIN.as_str())
+        .path("/")
+        .finish();
+    session_cookie.make_removal();
+    let mut csrf_cookie = Cookie::build("csrf", "")
+        .domain(config::COOKIE_DOMAIN.as_str())
+        .path("/")
+        .finish();
+    csrf_cookie.make_removal();
     Ok(HttpResponse::SeeOther()
-        .header(header::LOCATION, "/")
-        .del_cookie(&Cookie::named("session"))
-        .del_cookie(&Cookie::named("csrf"))
+        .append_header((header::LOCATION, "/"))
+        .cookie(session_cookie)
+        .cookie(csrf_cookie)
         .finish())
 }

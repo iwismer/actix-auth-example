@@ -4,7 +4,7 @@ use crate::{config, err_server};
 
 use bson::{doc, document::Document};
 use lazy_static::lazy_static;
-use mongodb::options::{ClientOptions, StreamAddress};
+use mongodb::options::{ClientOptions, ServerAddress};
 use mongodb::{Client, Collection, Database};
 
 pub mod email;
@@ -17,7 +17,7 @@ lazy_static! {
 }
 
 /// Get the collection containing all the users.
-fn users_collection() -> Result<Collection, ServerError> {
+fn users_collection() -> Result<Collection<Document>, ServerError> {
     Ok((*DB_CONN)
         .as_ref()
         .map_err(|e| e.clone())?
@@ -25,7 +25,7 @@ fn users_collection() -> Result<Collection, ServerError> {
 }
 
 /// Get the collection containing all the session tokens.
-fn session_collection() -> Result<Collection, ServerError> {
+fn session_collection() -> Result<Collection<Document>, ServerError> {
     Ok((*DB_CONN)
         .as_ref()
         .map_err(|e| e.clone())?
@@ -33,7 +33,7 @@ fn session_collection() -> Result<Collection, ServerError> {
 }
 
 /// Get the collection containing all the email tokens.
-fn email_token_collection() -> Result<Collection, ServerError> {
+fn email_token_collection() -> Result<Collection<Document>, ServerError> {
     Ok((*DB_CONN)
         .as_ref()
         .map_err(|e| e.clone())?
@@ -41,7 +41,7 @@ fn email_token_collection() -> Result<Collection, ServerError> {
 }
 
 /// Get the collection containing all the TOTP tokens.
-fn totp_token_collection() -> Result<Collection, ServerError> {
+fn totp_token_collection() -> Result<Collection<Document>, ServerError> {
     Ok((*DB_CONN)
         .as_ref()
         .map_err(|e| e.clone())?
@@ -49,7 +49,7 @@ fn totp_token_collection() -> Result<Collection, ServerError> {
 }
 
 /// Get the collection containing all the password reset tokens.
-fn password_reset_token_collection() -> Result<Collection, ServerError> {
+fn password_reset_token_collection() -> Result<Collection<Document>, ServerError> {
     Ok((*DB_CONN)
         .as_ref()
         .map_err(|e| e.clone())?
@@ -60,8 +60,8 @@ fn password_reset_token_collection() -> Result<Collection, ServerError> {
 /// This should only be called once at the start up of the server.
 fn connect_to_db() -> Result<Database, ServerError> {
     let mut client_options = ClientOptions::builder()
-        .hosts(vec![StreamAddress {
-            hostname: config::DB_ADDR.to_string(),
+        .hosts(vec![ServerAddress::Tcp {
+            host: config::DB_ADDR.to_string(),
             port: Some(*config::DB_PORT),
         }])
         .max_pool_size(Some(*config::DB_POOL_SIZE))

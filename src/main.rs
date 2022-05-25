@@ -1,6 +1,6 @@
 /// This is an example for using different auths with actix
 use actix_files::Files;
-use actix_web::{http::header, middleware, web, App, HttpResponse, HttpServer};
+use actix_web::{http::header, middleware, web::{self, Data}, App, HttpResponse, HttpServer};
 use std::fs;
 
 mod auth;
@@ -25,12 +25,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Compress::default())
             .wrap(
-                middleware::DefaultHeaders::new().header(header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+                middleware::DefaultHeaders::new().add((header::X_CONTENT_TYPE_OPTIONS, "nosniff")),
             )
             // Removes trailing slash in the URL to make is so I don't need as many services
-            .wrap(middleware::NormalizePath::new(
-                middleware::normalize::TrailingSlash::Trim,
-            ))
+            .wrap(middleware::NormalizePath::trim())
             // enable logging
             .wrap(middleware::Logger::default())
             // Home page
@@ -49,10 +47,10 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/user")
                     .wrap(auth::middleware::AuthCheckService::require_auth())
-                    .data(
-                        awmp::PartsConfig::default()
-                            .with_file_limit(2_000_000)
-                            .with_temp_dir(config::STORAGE_DIR.as_path().join("tmp")),
+                    .app_data(
+                        Data::new(awmp::PartsConfig::default()
+                        .with_file_limit(2_000_000)
+                        .with_temp_dir(config::STORAGE_DIR.as_path().join("tmp"))),
                     )
                     .service(web::resource("").route(web::get().to(handlers::user::view_user)))
                     .service(

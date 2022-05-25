@@ -3,8 +3,9 @@ use crate::db::session::add_session;
 use crate::models::ServerError;
 use crate::{config, err_server};
 
-use actix_http::cookie::{Cookie, SameSite};
-use actix_web::HttpMessage;
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::dev::ServiceRequest;
+use actix_web::HttpRequest;
 use chrono::{Duration, Utc};
 use log::warn;
 use time::Duration as Dur;
@@ -48,6 +49,11 @@ pub async fn generate_session_token(
 }
 
 /// Extract the session token from the request cookies
-pub fn get_session_token<T: HttpMessage>(req: &T) -> Option<String> {
+pub fn get_session_token_http_request(req: &HttpRequest) -> Option<String> {
+    req.cookie("session").map(|c| c.value().to_string())
+}
+
+/// Extract the session token from the request cookies
+pub fn get_session_token_service_request(req: &ServiceRequest) -> Option<String> {
     req.cookie("session").map(|c| c.value().to_string())
 }

@@ -4,7 +4,7 @@ use crate::db::user::modify_user;
 use crate::models::{ServerError, User};
 use crate::{err_input, err_server};
 
-use actix_http::cookie::{Cookie, SameSite};
+use actix_web::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
 use time::Duration as Dur;
 use totp_rs::{Algorithm, TOTP};

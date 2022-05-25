@@ -4,7 +4,7 @@ use super::{session_collection, users_collection};
 use crate::err_server;
 use crate::models::{ServerError, User};
 
-use bson::doc;
+use bson::{doc, Document};
 use mongodb::options::UpdateModifications;
 use std::convert::TryFrom;
 
@@ -62,7 +62,7 @@ pub async fn get_user_by_userid(user_id: &str) -> Result<Option<User>, ServerErr
 /// Add a user to the DB
 pub async fn add_user(user: &User) -> Result<(), ServerError> {
     users_collection()?
-        .insert_one(user.into(), None)
+        .insert_one(Document::from(user), None)
         .await
         .map_err(|e| err_server!("Problem adding user: {}", e))?;
     Ok(())

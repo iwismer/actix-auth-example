@@ -107,7 +107,7 @@ impl ResponseError for ServiceError {
         };
         HttpResponse::build(status_code.clone())
             .content_type("text/html")
-            .header(header::WWW_AUTHENTICATE, "Cookie")
+            .append_header((header::WWW_AUTHENTICATE, "Cookie"))
             .body(body)
     }
 }
