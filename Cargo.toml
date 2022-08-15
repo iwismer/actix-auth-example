@@ -5,32 +5,32 @@ authors = ["Isaac Wismer <isaac@iwismer.ca>"]
 edition = "2018"
 
 [dependencies]
-actix-files = "0.6.0"
-actix-http = "3.0.4"
+actix-files = "0.6.2"
+actix-http = "3.2.1"
 actix-rt = "2.7.0"
 actix-service = "2.0.2"
-actix-web = "4.0.1"
+actix-web = "4.1.0"
 awmp = "0.8.1"
-bson = { version = "2.2.0", features = ["chrono-0_4"] }
-chrono = "0.4.19"
+bson = { version = "2.4.0", features = ["chrono-0_4"] }
+chrono = "0.4.22"
 env_logger = "0.9.0"
-futures = "0.3.21"
-getrandom = "0.2.6"
+futures = "0.3.23"
+getrandom = "0.2.7"
 hex = "0.4.3"
 lazy_static = "1.4.0"
 lettre = "0.9.6"
 lettre_email = "0.9.4"
 log = { version = "0.4.17", features = ["max_level_debug", "release_max_level_info"] }
-mongodb = "2.2.1"
+mongodb = "2.3.0"
 # oauth2 = { version = "3.0", features = ["futures-03", "reqwest-010"], default-features = false }
-regex = "1.5.6"
+regex = "1.6.0"
 rust-argon2 = "1.0.0"
-serde = "1.0.137"
+serde = "1.0.143"
 sha2 = "0.10.2"
-tera = "1.15.0"
-time = "0.3.9"
+tera = "1.17.0"
+time = "0.3.13"
 totp-rs = { version = "1.4.0", features = ["qr"] }
-unicode-normalization = "0.1.19"
+unicode-normalization = "0.1.21"
 url = "2.2.2"
 
 [profile.release]
